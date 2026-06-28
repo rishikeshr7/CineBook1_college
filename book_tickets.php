@@ -25,9 +25,13 @@ if (!$movie) {
 
 $genres = explode(',', $movie['genre']);
 
-// Fetch available dates for this movie
-$dates_query = $conn->prepare("SELECT DISTINCT show_date FROM showtimes WHERE movie_id = ? AND show_date >= CURRENT_DATE ORDER BY show_date ASC LIMIT 14");
-$dates_query->bind_param("i", $movie_id);
+// Determine selected city (falls back to session, then to 'Mumbai')
+$selected_city = isset($_GET['city']) ? trim($_GET['city']) : (isset($_SESSION['user_city']) ? $_SESSION['user_city'] : 'Mumbai');
+$_SESSION['user_city'] = $selected_city;
+
+// Fetch available dates for this movie in the selected city
+$dates_query = $conn->prepare("SELECT DISTINCT show_date FROM showtimes WHERE movie_id = ? AND city = ? AND show_date >= CURRENT_DATE ORDER BY show_date ASC LIMIT 14");
+$dates_query->bind_param("is", $movie_id, $selected_city);
 $dates_query->execute();
 $available_dates_result = $dates_query->get_result();
 $available_dates = [];
@@ -38,9 +42,9 @@ while($d = $available_dates_result->fetch_assoc()) {
 // Determine selected date
 $selected_date = isset($_GET['date']) ? $_GET['date'] : (count($available_dates) > 0 ? $available_dates[0] : date('Y-m-d'));
 
-// Fetch available languages for this movie
-$lang_query = $conn->prepare("SELECT DISTINCT language FROM showtimes WHERE movie_id = ? AND show_date >= CURRENT_DATE");
-$lang_query->bind_param("i", $movie_id);
+// Fetch available languages for this movie in the selected city
+$lang_query = $conn->prepare("SELECT DISTINCT language FROM showtimes WHERE movie_id = ? AND city = ? AND show_date >= CURRENT_DATE");
+$lang_query->bind_param("is", $movie_id, $selected_city);
 $lang_query->execute();
 $available_langs_result = $lang_query->get_result();
 $available_langs = [];
@@ -51,8 +55,8 @@ while($l = $available_langs_result->fetch_assoc()) {
 // Determine selected language
 $selected_lang = isset($_GET['lang']) ? $_GET['lang'] : 'All';
 
-// Fetch Showtimes for the selected date and language
-$shows_sql = "SELECT * FROM showtimes WHERE movie_id = ? AND show_date = ?";
+// Fetch Showtimes for the selected date, city, and language
+$shows_sql = "SELECT * FROM showtimes WHERE movie_id = ? AND city = ? AND show_date = ?";
 if ($selected_lang !== 'All') {
     $shows_sql .= " AND language = ?";
 }
@@ -60,9 +64,9 @@ $shows_sql .= " ORDER BY theater_id ASC, format ASC, show_time ASC";
 
 $shows_stmt = $conn->prepare($shows_sql);
 if ($selected_lang !== 'All') {
-    $shows_stmt->bind_param("iss", $movie_id, $selected_date, $selected_lang);
+    $shows_stmt->bind_param("isss", $movie_id, $selected_city, $selected_date, $selected_lang);
 } else {
-    $shows_stmt->bind_param("is", $movie_id, $selected_date);
+    $shows_stmt->bind_param("iss", $movie_id, $selected_city, $selected_date);
 }
 $shows_stmt->execute();
 $shows_result = $shows_stmt->get_result();

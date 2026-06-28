@@ -156,7 +156,7 @@ if (empty($now_showing) && empty($coming_soon)) {
                 </p>
 
                 <div class="flex flex-wrap items-center gap-4 pt-4">
-                    <a href="<?php echo htmlspecialchars($featured_movie['trailer_url'] ?? '#'); ?>" class="flex items-center gap-2.5 bg-[#F5C518] text-black px-7 py-3 rounded-xl font-semibold hover:bg-[#eab308] transition-colors text-lg">
+                    <a href="watch_trailer.php?id=<?php echo $featured_movie['id']; ?>" class="flex items-center gap-2.5 bg-[#F5C518] text-black px-7 py-3 rounded-xl font-semibold hover:bg-[#eab308] transition-colors text-lg">
                         <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg>
                         Watch Trailer
                     </a>

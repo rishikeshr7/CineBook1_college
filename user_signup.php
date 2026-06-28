@@ -11,13 +11,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $phone = trim($_POST['phone']);
     $raw_password = $_POST['password'];
 
+    // Get the redirect path
+    $redirect_to = isset($_POST['redirect_to']) ? trim($_POST['redirect_to']) : 'index.php';
+    // Clean redirect path of existing errors
+    $redirect_to = preg_replace('/[?&]error=[^&]+/', '', $redirect_to);
+    $redirect_to = rtrim($redirect_to, '?&');
+    $separator = (strpos($redirect_to, '?') === false) ? '?' : '&';
+
     // Basic Validation
     if (empty($fullname) || empty($email) || empty($phone) || empty($raw_password)) {
-        die("Error: All fields are required.");
+        header("Location: " . $redirect_to . $separator . "error=signup_emptyfields");
+        exit();
     }
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        die("Error: Invalid email format.");
+        header("Location: " . $redirect_to . $separator . "error=invalidemail");
+        exit();
     }
 
     // Securely hash the password
@@ -28,18 +37,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt = mysqli_prepare($conn, $check_query);
     
     if ($stmt) {
-        // "s" indicates the variable type is string
         mysqli_stmt_bind_param($stmt, "s", $email);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_store_result($stmt);
         
         if (mysqli_stmt_num_rows($stmt) > 0) {
             mysqli_stmt_close($stmt);
-            die("Error: This email is already registered. Please log in.");
+            header("Location: " . $redirect_to . $separator . "error=emailregistered");
+            exit();
         }
         mysqli_stmt_close($stmt);
     } else {
-        die("Database error: Failed to prepare the check query.");
+        header("Location: " . $redirect_to . $separator . "error=signup_sqlerror");
+        exit();
     }
 
     // 4. Insert the new user into the database
@@ -47,29 +57,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt = mysqli_prepare($conn, $insert_query);
     
     if ($stmt) {
-        // "ssss" indicates four string parameters
         mysqli_stmt_bind_param($stmt, "ssss", $fullname, $email, $phone, $hashed_password);
         
         if (mysqli_stmt_execute($stmt)) {
-            // Success! 
-            echo "<script>
-                alert('Account successfully created!');
-                window.location.href = 'index.php'; // Change to your actual login page
-            </script>";
-            // exit();
+            // Success! Get the newly inserted user's ID
+            $new_user_id = mysqli_insert_id($conn);
+            
+            // Automatically log them in by setting session variables
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $_SESSION['user_id'] = $new_user_id;
+            $_SESSION['user_email'] = $email;
+            $_SESSION['full_name'] = $fullname;
+            $_SESSION['logged_in'] = true;
+
+            // Redirect back to the referrer page
+            header("Location: " . $redirect_to);
+            exit();
         } else {
-            echo "Error: Something went wrong while creating your account. " . mysqli_error($conn);
+            header("Location: " . $redirect_to . $separator . "error=signup_sqlerror");
+            exit();
         }
         mysqli_stmt_close($stmt);
     } else {
-        die("Database error: Failed to prepare the insert query.");
+        header("Location: " . $redirect_to . $separator . "error=signup_sqlerror");
+        exit();
     }
 
     // Close the database connection
     mysqli_close($conn);
 
 } else {
-    // If someone tries to access this file directly without submitting the form
-    die("Error: Invalid request method.");
+    header("Location: index.php");
+    exit();
 }
 ?>

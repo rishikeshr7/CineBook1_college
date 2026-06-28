@@ -150,6 +150,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if ($crew_stmt) $crew_stmt->close();
             }
 
+            // --- 6C. Process Multi-Language Trailers ---
+            if (isset($_POST['trailer_languages']) && is_array($_POST['trailer_languages'])) {
+                $tr_sql = "INSERT INTO movie_trailers (movie_id, language, trailer_url) VALUES (?, ?, ?)";
+                $tr_stmt = $conn->prepare($tr_sql);
+                
+                foreach ($_POST['trailer_languages'] as $index => $tr_lang) {
+                    $tr_lang = trim($tr_lang);
+                    $tr_url = trim($_POST['trailer_urls'][$index] ?? '');
+                    if (!empty($tr_lang) && !empty($tr_url)) {
+                        if ($tr_stmt) {
+                            $tr_stmt->bind_param("iss", $movie_id, $tr_lang, $tr_url);
+                            $tr_stmt->execute();
+                        }
+                    }
+                }
+                if ($tr_stmt) $tr_stmt->close();
+            }
+
             header("Location: admin_dashboard.php?success=movieadded");
         } else {
             header("Location: admin_dashboard.php?error=sqlfailed");

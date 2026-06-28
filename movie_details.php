@@ -24,6 +24,20 @@ if (!$movie) {
     exit();
 }
 
+// Check if any trailers exist (default or multi-language)
+$has_trailers = !empty($movie['trailer_url']);
+if (!$has_trailers) {
+    $tr_check = $conn->prepare("SELECT COUNT(*) FROM movie_trailers WHERE movie_id = ?");
+    $tr_check->bind_param("i", $movie_id);
+    $tr_check->execute();
+    $tr_check->bind_result($tr_count);
+    $tr_check->fetch();
+    $tr_check->close();
+    if ($tr_count > 0) {
+        $has_trailers = true;
+    }
+}
+
 // Fetch Cast
 $cast_stmt = $conn->prepare("SELECT * FROM movie_cast WHERE movie_id = ?");
 $cast_stmt->bind_param("i", $movie_id);
@@ -158,8 +172,8 @@ $formats = explode(',', $movie['formats']);
                     <a href="book_tickets.php?id=<?php echo $movie['id']; ?>" class="px-8 py-3 bg-brand text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors shadow-sm">
                         Book Tickets
                     </a>
-                    <?php if(!empty($movie['trailer_url'])): ?>
-                    <a href="<?php echo htmlspecialchars($movie['trailer_url']); ?>" target="_blank" class="px-8 py-3 bg-white dark:bg-transparent border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white font-bold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-2">
+                    <?php if($has_trailers): ?>
+                    <a href="watch_trailer.php?id=<?php echo $movie['id']; ?>" class="px-8 py-3 bg-white dark:bg-transparent border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white font-bold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-2">
                         <i data-lucide="play" class="w-5 h-5"></i> Watch Trailer
                     </a>
                     <?php endif; ?>

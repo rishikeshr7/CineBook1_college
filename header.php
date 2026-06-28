@@ -140,6 +140,26 @@ if (isset($_GET['city'])) {
         </div>
         <div class="p-6">
             <form action="user_login.php" method="POST" class="space-y-5">
+                <input type="hidden" name="redirect_to" value="<?php echo htmlspecialchars($_SERVER['REQUEST_URI']); ?>">
+                <?php if (isset($_GET['error'])): ?>
+                    <?php 
+                    $signin_errors = ['wrongpassword', 'nouser', 'emptyfields', 'sqlerror'];
+                    if (in_array($_GET['error'], $signin_errors)): 
+                    ?>
+                        <div class="bg-red-950/20 border border-red-900/50 text-red-400 text-xs font-semibold p-3 rounded-lg flex items-center gap-2 mb-4">
+                            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+                            <span>
+                                <?php 
+                                $err = $_GET['error'];
+                                if ($err === 'wrongpassword') echo "Incorrect password. Please try again.";
+                                elseif ($err === 'nouser') echo "No account found with this email.";
+                                elseif ($err === 'emptyfields') echo "All fields are required.";
+                                elseif ($err === 'sqlerror') echo "Database error. Please try again.";
+                                ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
                 <div class="space-y-2">
                     <label for="user-email" class="block text-sm font-semibold text-gray-200">Email</label>
                     <div class="relative">
@@ -185,6 +205,26 @@ if (isset($_GET['city'])) {
         
         <div class="p-6">
             <form action="user_signup.php" method="POST" class="space-y-4">
+                <input type="hidden" name="redirect_to" value="<?php echo htmlspecialchars($_SERVER['REQUEST_URI']); ?>">
+                <?php if (isset($_GET['error'])): ?>
+                    <?php 
+                    $signup_errors = ['invalidemail', 'emailregistered', 'signup_emptyfields', 'signup_sqlerror'];
+                    if (in_array($_GET['error'], $signup_errors)): 
+                    ?>
+                        <div class="bg-red-950/20 border border-red-900/50 text-red-400 text-xs font-semibold p-3 rounded-lg flex items-center gap-2 mb-4">
+                            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+                            <span>
+                                <?php 
+                                $err = $_GET['error'];
+                                if ($err === 'invalidemail') echo "Invalid email format.";
+                                elseif ($err === 'emailregistered') echo "This email is already registered. Please log in.";
+                                elseif ($err === 'signup_emptyfields') echo "All fields are required.";
+                                elseif ($err === 'signup_sqlerror') echo "Database error. Please try again.";
+                                ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
                 <div class="space-y-2">
                     <label for="reg-name" class="block text-sm font-semibold text-gray-200">Full Name</label>
                     <div class="relative">
@@ -320,5 +360,26 @@ if (isset($_GET['city'])) {
                 updateIcons(true);
             }
         });
+    }
+
+    // Automatically open correct modal if error is present in URL query string
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorParam = urlParams.get('error');
+    if (errorParam) {
+        const signupErrors = ['invalidemail', 'emailregistered', 'signup_emptyfields', 'signup_sqlerror'];
+        if (signupErrors.includes(errorParam)) {
+            if (signupModal) {
+                signupModal.classList.remove('hidden');
+                signupModal.classList.add('flex');
+            }
+        } else {
+            if (signinModal) {
+                signinModal.classList.remove('hidden');
+                signinModal.classList.add('flex');
+            }
+        }
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 </script>

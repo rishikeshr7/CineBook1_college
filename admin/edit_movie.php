@@ -38,6 +38,13 @@ $crew_stmt->execute();
 $crew_members = $crew_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $crew_stmt->close();
 
+// Fetch Trailers
+$trailer_stmt = $conn->prepare("SELECT * FROM movie_trailers WHERE movie_id = ?");
+$trailer_stmt->bind_param("i", $movie_id);
+$trailer_stmt->execute();
+$movie_trailers = $trailer_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$trailer_stmt->close();
+
 // 2. Process the Update Form if POST request
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
@@ -168,6 +175,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     }
                 }
                 if ($crew_stmt) $crew_stmt->close();
+            }
+
+            // --- Process Multi-Language Trailers ---
+            $conn->query("DELETE FROM movie_trailers WHERE movie_id = $movie_id");
+
+            if (isset($_POST['trailer_languages']) && is_array($_POST['trailer_languages'])) {
+                $tr_sql = "INSERT INTO movie_trailers (movie_id, language, trailer_url) VALUES (?, ?, ?)";
+                $tr_stmt = $conn->prepare($tr_sql);
+                
+                foreach ($_POST['trailer_languages'] as $index => $tr_lang) {
+                    $tr_lang = trim($tr_lang);
+                    $tr_url = trim($_POST['trailer_urls'][$index] ?? '');
+                    if (!empty($tr_lang) && !empty($tr_url)) {
+                        if ($tr_stmt) {
+                            $tr_stmt->bind_param("iss", $movie_id, $tr_lang, $tr_url);
+                            $tr_stmt->execute();
+                        }
+                    }
+                }
+                if ($tr_stmt) $tr_stmt->close();
             }
 
             header("Location: admin_dashboard.php?success=movieupdated");
@@ -353,6 +380,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <input type="url" name="trailer_url" value="<?php echo htmlspecialchars($movie['trailer_url']); ?>" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none transition-colors">
                         </div>
 
+                        <!-- Additional Multi-language Trailers -->
+                        <div class="border border-gray-200 dark:border-borderMain rounded-xl p-5 space-y-4 mt-6 bg-[#0c0c0c]">
+                            <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <i data-lucide="video" class="w-4 h-4 text-brand"></i> Additional Trailers (Multi-Language)
+                            </h4>
+                            <div id="trailer-fields-container" class="space-y-3">
+                                <!-- Dynamic rows go here -->
+                            </div>
+                            <button type="button" onclick="addTrailerRow()" class="w-full mt-2 py-2.5 rounded-lg bg-transparent text-yellow-600 dark:text-brand border border-yellow-600 dark:border-brand text-xs font-bold hover:bg-yellow-50 dark:hover:bg-brand/10 transition-colors flex justify-center items-center gap-1.5">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Trailer Language
+                            </button>
+                        </div>
+
                         <div class="space-y-4 mt-10">
                             <h4 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 border-b border-gray-200 dark:border-borderMain pb-2">
                                 <i data-lucide="user-plus" class="w-5 h-5 text-brand"></i> Cast Members
@@ -477,6 +517,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Initialize counters dynamically based on existing rows
         let castCount = <?php echo $castCount + 100; ?>; 
         let crewCount = <?php echo $crewCount + 100; ?>;
+
+        let trailerCount = 0;
+        function addTrailerRow(lang = '', url = '') {
+            trailerCount++;
+            const container = document.getElementById('trailer-fields-container');
+            const row = document.createElement('div');
+            row.className = "trailer-row flex items-center gap-3 border-b border-gray-800 pb-3 last:border-none last:pb-0 mt-3";
+            row.innerHTML = `
+                <input type="text" name="trailer_languages[]" value="${lang}" placeholder="Language (e.g. Hindi, Tamil)" class="w-1/3 bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-xs focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
+                <input type="url" name="trailer_urls[]" value="${url}" placeholder="Trailer Embed URL (https://www.youtube.com/embed/...)" class="flex-1 bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-xs focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
+                <button type="button" onclick="this.closest('.trailer-row').remove()" class="text-gray-400 hover:text-red-500 transition-colors p-1" title="Remove Trailer">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            `;
+            container.appendChild(row);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // On document load, pre-populate existing trailers
+        document.addEventListener("DOMContentLoaded", function() {
+            <?php foreach($movie_trailers as $tr): ?>
+                addTrailerRow(
+                    "<?php echo addslashes($tr['language']); ?>", 
+                    "<?php echo addslashes($tr['trailer_url']); ?>"
+                );
+            <?php endforeach; ?>
+        });
 
         function addCastMember() {
             castCount++;
