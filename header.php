@@ -62,13 +62,18 @@ if (isset($_GET['city'])) {
 
         <div class="flex items-center justify-end gap-5 md:gap-6 flex-1">
             
-            <div class="hidden lg:flex items-center bg-gray-100 dark:bg-[#151515] border border-transparent dark:border-[#222222] rounded-xl px-4 py-2 w-[350px] transition-colors duration-300">
+            <div class="hidden lg:flex items-center bg-gray-100 dark:bg-[#151515] border border-transparent dark:border-[#222222] rounded-xl px-4 py-2 w-[350px] transition-colors duration-300 relative z-[60]">
                 <i data-lucide="search" class="w-4 h-4 text-gray-500 dark:text-gray-400 mr-2 shrink-0"></i>
                 <input 
                     type="text" 
+                    id="header-search-input"
                     placeholder="Search movies..." 
+                    autocomplete="off"
                     class="bg-transparent border-none outline-none text-sm w-full placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white"
                 >
+                <div id="search-results-container" class="absolute top-[calc(100%+8px)] left-0 w-full bg-white dark:bg-[#111111] border border-gray-200 dark:border-[#262626] rounded-xl shadow-lg opacity-0 invisible transition-all duration-200 overflow-hidden">
+                    <div id="search-results-list" class="max-h-[350px] overflow-y-auto"></div>
+                </div>
             </div>
 
             <button id="theme-toggle" class="hover:text-gray-900 dark:hover:text-white text-gray-600 dark:text-gray-300 transition-colors">
@@ -381,5 +386,77 @@ if (isset($_GET['city'])) {
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
+    }
+
+    // Live Search Functionality
+    const searchInput = document.getElementById('header-search-input');
+    const searchContainer = document.getElementById('search-results-container');
+    const searchList = document.getElementById('search-results-list');
+    let searchTimeout = null;
+
+    if (searchInput && searchContainer && searchList) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            const currentCity = <?php echo json_encode($current_city); ?>;
+            
+            clearTimeout(searchTimeout);
+            
+            if (query.length === 0) {
+                searchContainer.classList.add('opacity-0', 'invisible');
+                searchList.innerHTML = '';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                fetch(`search_movies.php?q=${encodeURIComponent(query)}&city=${encodeURIComponent(currentCity)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        searchList.innerHTML = '';
+                        if (data.length === 0) {
+                            searchList.innerHTML = `
+                                <div class="px-4 py-3 text-sm font-semibold text-gray-500 dark:text-gray-400 text-center">
+                                    No movies found for "${query}" in ${currentCity}.
+                                </div>
+                            `;
+                        } else {
+                            data.forEach(movie => {
+                                const poster = movie.poster_image ? (movie.poster_image.startsWith('http') ? movie.poster_image : 'admin/' + movie.poster_image) : 'https://via.placeholder.com/100x150?text=No+Poster';
+                                const badgeClass = movie.status === 'Now Showing' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+                                
+                                const a = document.createElement('a');
+                                a.href = `movie_details.php?id=${movie.id}`;
+                                a.className = "flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors border-b border-gray-100 dark:border-[#262626] last:border-0";
+                                a.innerHTML = `
+                                    <img src="${poster}" class="w-10 h-14 object-cover rounded shadow-sm shrink-0" alt="Poster">
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="text-sm font-bold text-gray-900 dark:text-white truncate">${movie.title}</h4>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">${movie.genre}</p>
+                                    </div>
+                                    <div class="shrink-0">
+                                        <span class="text-[10px] font-bold px-2 py-1 rounded-md ${badgeClass}">${movie.status}</span>
+                                    </div>
+                                `;
+                                searchList.appendChild(a);
+                            });
+                        }
+                        searchContainer.classList.remove('opacity-0', 'invisible');
+                    })
+                    .catch(err => console.error(err));
+            }, 250); 
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchContainer.contains(e.target)) {
+                searchContainer.classList.add('opacity-0', 'invisible');
+            }
+        });
+        
+        // Show dropdown again if input is clicked and has text
+        searchInput.addEventListener('focus', function() {
+            if (this.value.trim().length > 0 && searchList.innerHTML !== '') {
+                searchContainer.classList.remove('opacity-0', 'invisible');
+            }
+        });
     }
 </script>

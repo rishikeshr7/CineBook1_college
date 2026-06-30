@@ -91,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 <body class="bg-gray-50 dark:bg-background text-gray-900 dark:text-gray-100 min-h-screen flex flex-col items-center justify-center p-4 relative font-sans">
 
-    <button id="theme-toggle" class="absolute top-6 right-6 p-2.5 rounded-full bg-white dark:bg-card border border-gray-200 dark:border-border text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-input transition-colors shadow-sm" aria-label="Toggle Dark Mode">
+    <button type="button" id="theme-toggle" class="absolute top-6 right-6 p-2.5 rounded-full bg-white dark:bg-card border border-gray-200 dark:border-border text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-input transition-colors shadow-sm" aria-label="Toggle Dark Mode">
         <i data-lucide="moon" id="theme-icon-moon" class="w-5 h-5 block dark:hidden"></i>
         <i data-lucide="sun" id="theme-icon-sun" class="w-5 h-5 hidden dark:block"></i>
     </button>

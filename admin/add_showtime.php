@@ -29,11 +29,70 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // 2. Basic Validation for required fields (Added City validation here)
     if ($movie_id === 0 || empty($city) || empty($theater_id) || empty($show_date) || empty($show_time)) {
-        header("Location: scheduling.php?error=missingfields");
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'type' => 'missingfields']);
         exit();
     }
 
-    // 3. Prepare the SQL INSERT query (Added city column here)
+    // 3. Prevent Overlaps & Enforce 55-Min Rule
+    function getMinutesFromDuration($durationStr) {
+        $hours = 0; $minutes = 0;
+        if (preg_match('/(\d+)h/', $durationStr, $matches)) { $hours = (int)$matches[1]; }
+        if (preg_match('/(\d+)m/', $durationStr, $matches)) { $minutes = (int)$matches[1]; }
+        return ($hours * 60) + $minutes;
+    }
+
+    $dur_stmt = $conn->prepare("SELECT duration FROM movies WHERE id = ? LIMIT 1");
+    $dur_stmt->bind_param("i", $movie_id);
+    $dur_stmt->execute();
+    $dur_res = $dur_stmt->get_result();
+    $new_movie = $dur_res->fetch_assoc();
+    $dur_stmt->close();
+
+    $new_dur_mins = getMinutesFromDuration($new_movie['duration'] ?? '0h 0m');
+    $new_start = strtotime("$show_date $show_time");
+    $new_end = $new_start + (($new_dur_mins + 55) * 60);
+
+    $conflict_sql = "
+        SELECT s.show_date, s.show_time, m.duration 
+        FROM showtimes s
+        JOIN movies m ON s.movie_id = m.id
+        WHERE s.theater_id = ? AND s.screen_id = ? 
+        AND s.show_date BETWEEN DATE_SUB(?, INTERVAL 1 DAY) AND DATE_ADD(?, INTERVAL 1 DAY)
+    ";
+    $conflict_stmt = $conn->prepare($conflict_sql);
+    $conflict_stmt->bind_param("ssss", $theater_id, $screen_id, $show_date, $show_date);
+    $conflict_stmt->execute();
+    $conflict_res = $conflict_stmt->get_result();
+
+    $has_conflict = false;
+    $max_existing_end = 0;
+    while ($row = $conflict_res->fetch_assoc()) {
+        $ex_start = strtotime($row['show_date'] . ' ' . $row['show_time']);
+        $ex_dur_mins = getMinutesFromDuration($row['duration'] ?? '0h 0m');
+        $ex_end = $ex_start + (($ex_dur_mins + 55) * 60);
+
+        if ($new_start < $ex_end && $new_end > $ex_start) {
+            $has_conflict = true;
+            if ($ex_end > $max_existing_end) {
+                $max_existing_end = $ex_end;
+            }
+        }
+    }
+    $conflict_stmt->close();
+
+    if ($has_conflict) {
+        $recommended_time = date('H:i', $max_existing_end);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'status' => 'error',
+            'type' => 'conflict',
+            'recommended_time' => $recommended_time
+        ]);
+        exit();
+    }
+
+    // 4. Prepare the SQL INSERT query (Added city column here)
     $sql = "INSERT INTO showtimes (movie_id, city, theater_id, screen_id, format, language, show_date, show_time, total_seats, price_regular, price_premium, price_vip) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
@@ -62,24 +121,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // 4. Execute the query
         if ($stmt->execute()) {
-            // Success! Redirect back to the scheduling page with a success flag
-            // Optionally, pass the month and year back so the calendar stays on the month they were viewing
-            $m = date('n', strtotime($show_date));
-            $y = date('Y', strtotime($show_date));
-            header("Location: scheduling.php?success=showtimeadded&m=$m&y=$y");
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'success']);
         } else {
-            // Execution failed
-            header("Location: scheduling.php?error=sqlfailed");
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'type' => 'sqlfailed']);
         }
 
         $stmt->close();
     } else {
-        // Preparation failed (usually means a mismatch between columns and the query)
-        header("Location: scheduling.php?error=sqlpreparefailed");
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'type' => 'sqlpreparefailed']);
     }
 } else {
-    // Direct access not allowed
-    header("Location: scheduling.php");
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'type' => 'invalidmethod']);
 }
 
 $conn->close();

@@ -9,6 +9,7 @@ if (!isset($_GET['showtime_id']) || empty($_GET['showtime_id'])) {
 }
 
 $showtime_id = intval($_GET['showtime_id']);
+$max_seats = isset($_GET['num_seats']) ? intval($_GET['num_seats']) : 2;
 
 // 1. Fetch Showtime and Movie Details
 $sql = "SELECT s.*, m.title as movie_title, m.poster_image 
@@ -333,6 +334,7 @@ $total_columns = 16;
             lucide.createIcons();
         }
 
+        const MAX_SEATS = <?php echo $max_seats; ?>;
         let selectedSeats = [];
         let totalPrice = 0;
 
@@ -345,9 +347,9 @@ $total_columns = 16;
                 totalPrice -= price;
                 btn.classList.remove('selected');
             } else {
-                // Select seat (Limit to max 10 seats for sanity)
-                if (selectedSeats.length >= 10) {
-                    alert("You can only select a maximum of 10 seats.");
+                // Select seat 
+                if (selectedSeats.length >= MAX_SEATS) {
+                    alert(`You can only select ${MAX_SEATS} seat(s) based on your previous selection.`);
                     return;
                 }
                 selectedSeats.push(seatId);

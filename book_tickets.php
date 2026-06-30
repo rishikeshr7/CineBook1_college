@@ -272,6 +272,9 @@ while($show = $shows_result->fetch_assoc()) {
                                                 data-format="<?php echo htmlspecialchars($format_name); ?>"
                                                 data-lang="<?php echo htmlspecialchars($show['language']); ?>"
                                                 data-theater="<?php echo htmlspecialchars($theater_name); ?>"
+                                                data-price-regular="<?php echo $show['price_regular']; ?>"
+                                                data-price-premium="<?php echo $show['price_premium']; ?>"
+                                                data-price-vip="<?php echo $show['price_vip']; ?>"
                                                 onclick="selectShowtime(this)"
                                                 class="showtime-btn border border-gray-200 dark:border-borderMain bg-white dark:bg-transparent hover:border-brand dark:hover:border-brand rounded-lg p-3 flex flex-col min-w-[130px] transition-all text-left group cursor-pointer relative overflow-hidden">
                                                 
@@ -318,14 +321,70 @@ while($show = $shows_result->fetch_assoc()) {
                 <button type="button" onclick="closeBanner()" class="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors px-2 hidden sm:block">
                     Back
                 </button>
-                <form action="seat_selection.php" method="GET" class="m-0 p-0 w-full md:w-auto">
-                    <input type="hidden" name="showtime_id" id="banner-showtime-id" value="">
-                    <button type="submit" class="w-full md:w-auto px-8 py-3 bg-brand text-black text-sm font-bold rounded-lg hover:bg-yellow-500 transition-colors shadow-sm">
+                <button type="button" onclick="openSeatModal()" class="w-full md:w-auto px-8 py-3 bg-brand text-black text-sm font-bold rounded-lg hover:bg-yellow-500 transition-colors shadow-sm">
+                    Select Seats
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- How Many Seats Modal -->
+    <div id="seatCountModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity duration-300 opacity-0">
+        <div class="bg-white dark:bg-bgCard w-full max-w-xl sm:rounded-2xl rounded-t-2xl shadow-xl transform translate-y-full sm:scale-95 transition-all duration-300" id="seatCountModalContent">
+            
+            <div class="p-6 pb-0">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white text-center mb-6">How many seats?</h3>
+                
+                <div class="flex justify-center mb-6 h-32">
+                    <img id="vehicle-illustration" src="" alt="Vehicle" class="h-full object-contain drop-shadow-md transition-opacity duration-150">
+                </div>
+                
+                <div class="flex flex-wrap justify-center gap-1 sm:gap-2 mb-8" id="seat-numbers-container">
+                    <!-- Numbers will be injected here via JS -->
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100 dark:border-borderMain p-6 bg-white dark:bg-bgCard rounded-b-2xl">
+                <div class="flex justify-between items-center text-center gap-2 mb-6">
+                    
+                    <button type="button" class="w-10 h-10 rounded-full bg-gray-500 dark:bg-gray-600 flex items-center justify-center text-white shrink-0 hover:bg-gray-600 transition-colors">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    
+                    <div class="flex flex-1 justify-center gap-2 sm:gap-6 overflow-hidden">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider truncate">Regular</p>
+                            <p class="text-base font-bold text-gray-900 dark:text-white" id="modal-price-regular">--</p>
+                            <p class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-500 mt-1">AVAILABLE</p>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider truncate">Premium</p>
+                            <p class="text-base font-bold text-gray-900 dark:text-white" id="modal-price-premium">--</p>
+                            <p class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-500 mt-1">AVAILABLE</p>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider truncate">VIP</p>
+                            <p class="text-base font-bold text-gray-900 dark:text-white" id="modal-price-vip">--</p>
+                            <p class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-500 mt-1">AVAILABLE</p>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="w-10 h-10 rounded-full bg-gray-500 dark:bg-gray-600 flex items-center justify-center text-white shrink-0 hover:bg-gray-600 transition-colors">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                    
+                </div>
+
+                <form action="seat_selection.php" method="GET" class="m-0" id="seat-count-form">
+                    <input type="hidden" name="showtime_id" id="modal-showtime-id" value="">
+                    <input type="hidden" name="num_seats" id="modal-num-seats" value="2">
+                    <button type="submit" class="w-full py-3.5 bg-brand hover:bg-yellow-500 text-black text-base font-bold rounded-lg transition-colors shadow-sm">
                         Select Seats
                     </button>
                 </form>
             </div>
-
+            
         </div>
     </div>
 
@@ -365,11 +424,19 @@ while($show = $shows_result->fetch_assoc()) {
             const lang = btn.getAttribute('data-lang');
             const theater = btn.getAttribute('data-theater');
             const showtimeId = btn.getAttribute('data-showtime-id');
+            const priceRegular = btn.getAttribute('data-price-regular');
+            const pricePremium = btn.getAttribute('data-price-premium');
+            const priceVip = btn.getAttribute('data-price-vip');
 
-            // 4. Populate Banner
+            // 4. Populate Banner & Modal Data
             document.getElementById('banner-details').innerText = `${time} • ${format} • ${lang}`;
             document.getElementById('banner-theater').innerText = theater;
-            document.getElementById('banner-showtime-id').value = showtimeId;
+            
+            // Set Modal Form ID and Prices
+            document.getElementById('modal-showtime-id').value = showtimeId;
+            document.getElementById('modal-price-regular').innerText = '₹' + Math.round(priceRegular);
+            document.getElementById('modal-price-premium').innerText = '₹' + Math.round(pricePremium);
+            document.getElementById('modal-price-vip').innerText = '₹' + Math.round(priceVip);
 
             // 5. Slide up the banner
             const banner = document.getElementById('booking-banner');
@@ -394,6 +461,85 @@ while($show = $shows_result->fetch_assoc()) {
                 el.querySelector('.time-icon').classList.add('text-gray-400', 'dark:text-gray-500');
             });
         }
+
+        // --- SEAT COUNT MODAL LOGIC ---
+        let currentSeats = 2; // Default
+        
+        const images = {
+            scooter: "assets/images/scooter_illustration_1782660063154.png",
+            car: "assets/images/car_illustration_1782660072516.png",
+            bus: "assets/images/bus_illustration_1782660082078.png"
+        };
+
+        function getIllustration(count) {
+            if (count <= 2) return images.scooter;
+            if (count <= 5) return images.car;
+            return images.bus;
+        }
+
+        function renderSeatNumbers() {
+            const container = document.getElementById('seat-numbers-container');
+            container.innerHTML = '';
+            for (let i = 1; i <= 10; i++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                const isSelected = (i === currentSeats);
+                btn.className = `w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-medium transition-all ${
+                    isSelected 
+                        ? 'bg-brand text-black text-base sm:text-lg shadow-md scale-110' 
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm sm:text-base'
+                }`;
+                btn.innerText = i;
+                btn.onclick = () => selectSeatCount(i);
+                container.appendChild(btn);
+            }
+        }
+
+        function selectSeatCount(count) {
+            currentSeats = count;
+            document.getElementById('modal-num-seats').value = count;
+            
+            // Update Image
+            const img = document.getElementById('vehicle-illustration');
+            img.style.opacity = '0';
+            setTimeout(() => {
+                img.src = getIllustration(count);
+                img.style.opacity = '1';
+            }, 150);
+
+            renderSeatNumbers();
+        }
+
+        function openSeatModal() {
+            const modal = document.getElementById('seatCountModal');
+            const content = document.getElementById('seatCountModalContent');
+            
+            // Init
+            selectSeatCount(currentSeats);
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('translate-y-full', 'sm:scale-95');
+                content.classList.add('translate-y-0', 'sm:scale-100');
+            }, 10);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('seatCountModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                const modal = this;
+                const content = document.getElementById('seatCountModalContent');
+                
+                modal.classList.add('opacity-0');
+                content.classList.remove('translate-y-0', 'sm:scale-100');
+                content.classList.add('translate-y-full', 'sm:scale-95');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        });
     </script>
 </body>
 </html>

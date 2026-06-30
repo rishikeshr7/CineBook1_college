@@ -71,8 +71,15 @@ foreach ($all_showtimes_list as $showtime) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
+    <script>
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CineBook Admin - Scheduling</title>
@@ -136,6 +143,36 @@ foreach ($all_showtimes_list as $showtime) {
     <main class="flex-1 flex flex-col h-screen overflow-hidden">
         <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
             
+            <?php if (isset($_GET['error']) && $_GET['error'] == 'conflict'): ?>
+                <div id="scheduling-alert" class="mb-8 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400 font-medium flex items-start gap-3 shadow-sm transition-opacity duration-500">
+                    <i data-lucide="alert-circle" class="w-5 h-5 mt-0.5 shrink-0"></i>
+                    <div>
+                        <h4 class="text-base font-bold mb-1">Scheduling Conflict Detected</h4>
+                        <p class="text-sm opacity-90">This screen is already booked during that time. Please ensure there is at least a 55-minute gap between movies for cleaning and turnaround.</p>
+                    </div>
+                </div>
+            <?php elseif (isset($_GET['success']) && $_GET['success'] == 'showtimeadded'): ?>
+                <div id="scheduling-alert" class="mb-8 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-900/50 dark:text-green-400 font-medium flex items-center gap-3 shadow-sm transition-opacity duration-500">
+                    <i data-lucide="check-circle-2" class="w-5 h-5 shrink-0"></i>
+                    <p class="text-sm">Showtime successfully added to the schedule!</p>
+                </div>
+            <?php endif; ?>
+
+            <script>
+                const alertBox = document.getElementById('scheduling-alert');
+                if (alertBox) {
+                    setTimeout(() => {
+                        alertBox.style.opacity = '0';
+                        setTimeout(() => alertBox.remove(), 500);
+                        
+                        const url = new URL(window.location);
+                        url.searchParams.delete('error');
+                        url.searchParams.delete('success');
+                        window.history.replaceState({}, '', url);
+                    }, 4000);
+                }
+            </script>
+
             <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
                     <h1 class="text-3xl font-bold mb-1 text-gray-900 dark:text-white">Scheduling</h1>
@@ -309,6 +346,7 @@ foreach ($all_showtimes_list as $showtime) {
             
             <div class="p-6 overflow-y-auto">
                 <form id="add-showtime-form" action="add_showtime.php" method="POST" class="space-y-5">
+                    <div id="modal-alert-container"></div>
                     
                     <div>
                         <label class="block text-sm font-bold mb-2 text-white">Movie <span class="text-red-500">*</span></label>
@@ -462,7 +500,13 @@ foreach ($all_showtimes_list as $showtime) {
         const themeToggle = document.getElementById('toggle-theme');
         if (themeToggle) {
             themeToggle.addEventListener('click', () => {
-                document.documentElement.classList.toggle('dark');
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                }
             });
         }
 
@@ -529,6 +573,74 @@ foreach ($all_showtimes_list as $showtime) {
                 } else {
                     theaterSelect.innerHTML = '<option value="" disabled selected>Select city first</option>';
                 }
+            });
+        }
+
+        // AJAX Form Submission for Showtime
+        const showtimeForm = document.getElementById('add-showtime-form');
+        if (showtimeForm) {
+            showtimeForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const form = this;
+                const formData = new FormData(form);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                
+                submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...';
+                submitBtn.disabled = true;
+                
+                fetch('add_showtime.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    const alertContainer = document.getElementById('modal-alert-container');
+                    if (data.status === 'success') {
+                        const dateVal = formData.get('show_date');
+                        let urlParams = '';
+                        if (dateVal) {
+                            const d = new Date(dateVal);
+                            urlParams = `&m=${d.getMonth() + 1}&y=${d.getFullYear()}`;
+                        }
+                        window.location.href = `scheduling.php?success=showtimeadded${urlParams}`;
+                    } else if (data.status === 'error' && data.type === 'conflict') {
+                        alertContainer.innerHTML = `
+                            <div class="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400 font-medium flex flex-col gap-2 shadow-sm">
+                                <div class="flex items-start gap-3">
+                                    <i data-lucide="alert-circle" class="w-5 h-5 mt-0.5 shrink-0"></i>
+                                    <div>
+                                        <h4 class="text-base font-bold mb-1">Scheduling Conflict Detected</h4>
+                                        <p class="text-sm opacity-90">This screen is already booked. Please ensure a 55-minute gap.</p>
+                                    </div>
+                                </div>
+                                <div class="mt-2 pl-8 flex items-center justify-between bg-red-100 dark:bg-red-900/40 p-2 rounded-lg">
+                                    <span class="text-sm">Recommended Time: <strong class="text-red-700 dark:text-red-300">${data.recommended_time}</strong></span>
+                                    <button type="button" onclick="document.querySelector('input[name=\\'show_time\\']').value='${data.recommended_time}'; document.getElementById('modal-alert-container').innerHTML='';" class="text-xs font-bold bg-white dark:bg-[#1a1a1a] px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors border border-red-200 dark:border-red-800 shadow-sm text-gray-900 dark:text-white">Use this time</button>
+                                </div>
+                            </div>
+                        `;
+                        lucide.createIcons();
+                        // Scroll to top of modal so they see it
+                        document.querySelector('#showtime-modal .overflow-y-auto').scrollTop = 0;
+                    } else {
+                        alertContainer.innerHTML = `
+                            <div class="mb-5 p-3 rounded-md bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400 text-sm font-medium">
+                                An error occurred: ${data.type}
+                            </div>
+                        `;
+                        document.querySelector('#showtime-modal .overflow-y-auto').scrollTop = 0;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("A network error occurred.");
+                })
+                .finally(() => {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                });
             });
         }
     </script>
