@@ -142,9 +142,9 @@ $active_movies_count = $result->num_rows;
                             <input type="text" id="search-input" placeholder="Search movies..." class="w-full bg-gray-50 dark:bg-bgMain border border-gray-300 dark:border-borderMain text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-brand transition-colors text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-textMuted">
                         </div>
                         
-                        <button onclick="openModal()" class="flex-shrink-0 flex items-center gap-2 bg-brand text-black px-4 py-2 rounded-lg font-semibold text-sm hover:bg-yellow-500 transition-colors">
+                        <a href="add_movie.php" class="flex-shrink-0 flex items-center gap-2 bg-brand text-black px-4 py-2 rounded-lg font-semibold text-sm hover:bg-yellow-500 transition-colors">
                             <i data-lucide="plus" class="w-4 h-4"></i> Add New Movie
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -257,198 +257,7 @@ $active_movies_count = $result->num_rows;
 
     </main>
 
-    <div id="add-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center p-4">
-        <div class="bg-white dark:bg-bgCard w-full max-w-2xl rounded-xl shadow-2xl border border-gray-200 dark:border-borderMain flex flex-col max-h-[90vh]">
-            
-            <div class="p-6 flex justify-between items-center border-b border-gray-200 dark:border-borderMain shrink-0">
-                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Add New Movie</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            
-            <div class="p-6 overflow-y-auto custom-scrollbar">
-<form id="add-movie-form" action="add_movie.php" method="POST" enctype="multipart/form-data" class="space-y-6">
     
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div>
-            <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Title <span class="text-red-500">*</span></label>
-            <input type="text" id="m-title" name="title" required placeholder="Movie title" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-        </div>
-        <div>
-            <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Duration <span class="text-red-500">*</span></label>
-            <input type="text" id="m-duration" name="duration" required placeholder="e.g., 180 min" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-        </div>
-    </div>
-
-    <div>
-        <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Genre <span class="text-red-500">*</span></label>
-        <input type="text" id="m-genre" name="genre" required placeholder="Action, Drama, Sci-Fi (comma separated)" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div>
-            <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Language</label>
-            <input type="text" id="m-lang" name="language" placeholder="English, Hindi (comma separated)" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-        </div>
-        <div>
-            <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Certification</label>
-            <select id="m-cert" name="certification" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none transition-colors">
-                <option value="UA">UA</option>
-                <option value="U">U</option>
-                <option value="A">A</option>
-                <option value="S">S</option>
-            </select>
-        </div>
-    </div>
-
-    <div>
-        <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Synopsis</label>
-        <textarea id="m-synopsis" name="synopsis" rows="4" placeholder="Movie synopsis..." class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors resize-none"></textarea>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div>
-            <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Director</label>
-            <input type="text" id="m-director" name="director" placeholder="Director name" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-        </div>
-        <div>
-            <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Release Date</label>
-            <input type="text" id="m-release" name="release_date" placeholder="e.g., July 21, 2023" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div>
-            <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Rating(out of 10)</label>
-            <input type="text" id="m-rating" name="rating" placeholder="e.g. 8.5" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none transition-colors">
-        </div>
-        <div>
-            <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Status</label>
-            <select id="m-status" name="status" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none transition-colors">
-                <option value="Now Showing">Now Showing</option>
-                <option value="Coming Soon">Coming Soon</option>
-            </select>
-        </div>
-    </div>
-
-    <div class="border border-gray-200 dark:border-inputBorder bg-white dark:bg-inputBg rounded-lg p-4 flex justify-between items-center transition-colors">
-        <div>
-            <label for="m-rerelease" class="text-sm font-bold text-gray-900 dark:text-white cursor-pointer">Re-Release</label>
-            <p class="text-xs text-gray-500 dark:text-textMuted mt-0.5">Mark this movie as a re-release of an older title</p>
-        </div>
-        <label class="relative inline-flex items-center cursor-pointer shrink-0">
-            <input type="checkbox" id="m-rerelease" name="is_rerelease" value="1" class="sr-only peer">
-            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-[#333333] peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-brand"></div>
-        </label>
-    </div>
-
-    <div>
-        <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Formats</label>
-        <input type="text" id="m-formats" name="formats" placeholder="IMAX, Dolby Cinema, Standard (comma separated)" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-    </div>
-
-    <div>
-        <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Poster Image</label>
-        <div class="relative">
-            <input type="file" id="m-poster" name="poster_image" accept="image/*" class="hidden" onchange="updateFileName(this)">
-            <label for="m-poster" class="w-full flex items-center justify-center gap-2 cursor-pointer bg-yellow-50 dark:bg-[#F5C518] hover:bg-yellow-100 dark:hover:bg-yellow-500 text-yellow-700 dark:text-black font-semibold py-3 px-4 border border-yellow-200 dark:border-transparent rounded-lg transition-colors text-sm">
-                <i data-lucide="upload" class="w-4 h-4"></i>
-                <span id="file-name-display">Upload Poster Image</span>
-            </label>
-        </div>
-    </div>
-
-    <div>
-        <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Trailer URL</label>
-        <input type="url" id="m-trailer" name="trailer_url" placeholder="https://www.youtube.com/embed/..." class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-    </div>
-
-    <!-- Additional Multi-language Trailers -->
-    <div class="border border-gray-200 dark:border-borderMain rounded-xl p-5 space-y-4">
-        <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i data-lucide="video" class="w-4 h-4 text-brand"></i> Additional Trailers (Multi-Language)
-        </h4>
-        <div id="trailer-fields-container" class="space-y-3">
-            <!-- Dynamic rows go here -->
-        </div>
-        <button type="button" onclick="addTrailerRow()" class="w-full mt-2 py-2.5 rounded-lg bg-transparent text-yellow-600 dark:text-brand border border-yellow-600 dark:border-brand text-xs font-bold hover:bg-yellow-50 dark:hover:bg-brand/10 transition-colors flex justify-center items-center gap-1.5">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Trailer Language
-        </button>
-    </div>
-
-    <div class="border border-gray-200 dark:border-borderMain rounded-xl p-5 space-y-4">
-        <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i data-lucide="user-plus" class="w-4 h-4 text-brand"></i> Cast Members
-        </h4>
-        
-        <div class="border border-dashed border-gray-300 dark:border-borderMain rounded-lg p-5">
-            <p class="text-xs font-bold text-gray-500 dark:text-textMuted mb-3 uppercase tracking-wider">Add Cast Member</p>
-            
-            <div id="cast-fields-container" class="space-y-4">
-                <div class="member-row flex flex-col sm:flex-row gap-4 items-start sm:items-center border-b border-gray-100 dark:border-borderMain sm:border-none pb-4 sm:pb-0">
-                    <div class="shrink-0">
-                        <input type="file" id="cast-img-1" name="cast_images[]" class="hidden" accept="image/*" onchange="updateCastCrewImageName(this)">
-                        <label for="cast-img-1" class="w-14 h-14 rounded-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-borderMain transition-colors shadow-sm" title="Upload Cast Profile Image">
-                            <i data-lucide="upload" class="w-4 h-4 text-gray-400"></i>
-                        </label>
-                    </div>
-                    <div class="flex-1 space-y-2 w-full">
-                        <input type="text" name="cast_names[]" placeholder="Actor/Actress name" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-                        <input type="text" name="cast_characters[]" placeholder="Character name" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-                    </div>
-                    <div class="w-9 hidden sm:block"></div>
-                </div>
-            </div>
-
-            <button type="button" onclick="addCastMember()" class="w-full mt-4 py-2.5 rounded-lg bg-yellow-50 dark:bg-brand/10 text-yellow-600 dark:text-brand border border-yellow-200 dark:border-brand/20 text-sm font-bold hover:bg-yellow-100 dark:hover:bg-brand/20 transition-colors flex justify-center items-center gap-2">
-                <i data-lucide="plus" class="w-4 h-4"></i> Add More Cast
-            </button>
-        </div>
-    </div>
-
-    <div class="border border-gray-200 dark:border-borderMain rounded-xl p-5 space-y-4">
-        <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i data-lucide="users" class="w-4 h-4 text-brand"></i> Crew Members
-        </h4>
-        
-        <div class="border border-dashed border-gray-300 dark:border-borderMain rounded-lg p-5">
-            <p class="text-xs font-bold text-gray-500 dark:text-textMuted mb-3 uppercase tracking-wider">Add Crew Member</p>
-            
-            <div id="crew-fields-container" class="space-y-4">
-                <div class="member-row flex flex-col sm:flex-row gap-4 items-start sm:items-center border-b border-gray-100 dark:border-borderMain sm:border-none pb-4 sm:pb-0">
-                    <div class="shrink-0">
-                        <input type="file" id="crew-img-1" name="crew_images[]" class="hidden" accept="image/*" onchange="updateCastCrewImageName(this)">
-                        <label for="crew-img-1" class="w-14 h-14 rounded-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-borderMain transition-colors shadow-sm" title="Upload Crew Profile Image">
-                            <i data-lucide="upload" class="w-4 h-4 text-gray-400"></i>
-                        </label>
-                    </div>
-                    <div class="flex-1 space-y-2 w-full">
-                        <input type="text" name="crew_names[]" placeholder="Crew member name" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-                        <input type="text" name="crew_roles[]" placeholder="Role (e.g. Cinematographer, Editor)" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-                    </div>
-                    <div class="w-9 hidden sm:block"></div>
-                </div>
-            </div>
-
-            <button type="button" onclick="addCrewMember()" class="w-full mt-4 py-2.5 rounded-lg bg-yellow-50 dark:bg-brand/10 text-yellow-600 dark:text-brand border border-yellow-200 dark:border-brand/20 text-sm font-bold hover:bg-yellow-100 dark:hover:bg-brand/20 transition-colors flex justify-center items-center gap-2">
-                <i data-lucide="plus" class="w-4 h-4"></i> Add More Crew
-            </button>
-        </div>
-    </div>
-
-    <div class="pt-6 pb-2 flex justify-between items-center border-t border-gray-200 dark:border-borderMain mt-4">
-        <button type="button" onclick="closeModal()" class="text-gray-900 dark:text-white text-sm font-bold hover:text-gray-500 dark:hover:text-gray-300 transition-colors px-4 py-2">
-            Cancel
-        </button>
-        <button type="submit" class="w-[200px] py-3 rounded-lg bg-[#F5C518] text-black text-sm font-bold hover:bg-yellow-500 transition-colors">
-            Add Movie
-        </button>
-    </div>
-</form>
-            </div>
-        </div>
-    </div>
 
     <script>
         lucide.createIcons();
@@ -466,8 +275,6 @@ $active_movies_count = $result->num_rows;
         const searchInput = document.getElementById('search-input');
         const emptyState = document.getElementById('empty-state');
         const themeToggle = document.getElementById('toggle-theme');
-        const addModal = document.getElementById('add-modal');
-
         // Search/Filter Functionality using the DOM
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
@@ -502,15 +309,6 @@ $active_movies_count = $result->num_rows;
             }
         });
 
-        // Modal Controls
-        window.openModal = function() {
-            addModal.classList.remove('hidden');
-        }
-
-        window.closeModal = function() {
-            addModal.classList.add('hidden');
-        }
-
         // Delete Confirmation
         window.confirmDelete = function(id) {
             if (confirm('Are you sure you want to delete this movie? This will also remove all associated showtimes.')) {
@@ -521,104 +319,7 @@ $active_movies_count = $result->num_rows;
 
 
 
-    // Counters to ensure every dynamic file input gets a uniquely linked label ID
-    let castCount = 1;
-    let crewCount = 1;
 
-    function addCastMember() {
-        castCount++;
-        const container = document.getElementById('cast-fields-container');
-        
-        const row = document.createElement('div');
-        row.className = "member-row flex flex-col sm:flex-row gap-4 items-start sm:items-center border-b border-gray-100 dark:border-borderMain sm:border-none pb-4 sm:pb-0 animation-fade-in";
-        
-        row.innerHTML = `
-            <div class="shrink-0">
-                <input type="file" id="cast-img-${castCount}" name="cast_images[]" class="hidden" accept="image/*" onchange="updateCastCrewImageName(this)">
-                <label for="cast-img-${castCount}" class="w-14 h-14 rounded-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-borderMain transition-colors shadow-sm">
-                    <i data-lucide="upload" class="w-4 h-4 text-gray-400"></i>
-                </label>
-            </div>
-            <div class="flex-1 space-y-2 w-full">
-                <input type="text" name="cast_names[]" placeholder="Actor/Actress name" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-                <input type="text" name="cast_characters[]" placeholder="Character name" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-            </div>
-            <div class="w-full sm:w-auto flex justify-end">
-                <button type="button" onclick="this.closest('.member-row').remove()" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors" title="Remove Member">
-                    <i data-lucide="trash-2" class="w-5 h-5"></i>
-                </button>
-            </div>
-        `;
-        
-        container.appendChild(row);
-        if (typeof lucide !== 'undefined') lucide.createIcons(); // Refresh Lucide icons inside the new row
-    }
-
-    function addCrewMember() {
-        crewCount++;
-        const container = document.getElementById('crew-fields-container');
-        
-        const row = document.createElement('div');
-        row.className = "member-row flex flex-col sm:flex-row gap-4 items-start sm:items-center border-b border-gray-100 dark:border-borderMain sm:border-none pb-4 sm:pb-0 animation-fade-in";
-        
-        row.innerHTML = `
-            <div class="shrink-0">
-                <input type="file" id="crew-img-${crewCount}" name="crew_images[]" class="hidden" accept="image/*" onchange="updateCastCrewImageName(this)">
-                <label for="crew-img-${crewCount}" class="w-14 h-14 rounded-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-borderMain transition-colors shadow-sm">
-                    <i data-lucide="upload" class="w-4 h-4 text-gray-400"></i>
-                </label>
-            </div>
-            <div class="flex-1 space-y-2 w-full">
-                <input type="text" name="crew_names[]" placeholder="Crew member name" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-                <input type="text" name="crew_roles[]" placeholder="Role (e.g. Cinematographer, Editor)" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-sm focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-            </div>
-            <div class="w-full sm:w-auto flex justify-end">
-                <button type="button" onclick="this.closest('.member-row').remove()" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors" title="Remove Member">
-                    <i data-lucide="trash-2" class="w-5 h-5"></i>
-                </button>
-            </div>
-        `;
-        
-        container.appendChild(row);
-        if (typeof lucide !== 'undefined') lucide.createIcons(); // Refresh Lucide icons inside the new row
-    }
-
-    // Utility function to turn avatar label green/check on successful selection
-    function updateCastCrewImageName(input) {
-        const label = input.nextElementSibling;
-        if (input.files && input.files[0]) {
-            label.classList.remove('bg-gray-50', 'dark:bg-inputBg', 'border-gray-200');
-            label.classList.add('bg-green-50', 'dark:bg-green-950/30', 'border-green-500');
-            label.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-green-500"></i>`;
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-    }
-
-    function updateFileName(input) {
-        const display = document.getElementById('file-name-display');
-        if (input.files && input.files[0]) {
-            display.textContent = input.files[0].name;
-        } else {
-            display.textContent = "Upload Poster Image";
-        }
-    }
-
-    let trailerCount = 0;
-    function addTrailerRow(lang = '', url = '') {
-        trailerCount++;
-        const container = document.getElementById('trailer-fields-container');
-        const row = document.createElement('div');
-        row.className = "trailer-row flex items-center gap-3 border-b border-gray-100 dark:border-borderMain pb-3 last:border-none last:pb-0";
-        row.innerHTML = `
-            <input type="text" name="trailer_languages[]" value="${lang}" placeholder="Language (e.g. Hindi, Tamil)" class="w-1/3 bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-xs focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-            <input type="url" name="trailer_urls[]" value="${url}" placeholder="Trailer Embed URL (https://www.youtube.com/embed/...)" class="flex-1 bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-2.5 text-xs focus:border-brand focus:outline-none placeholder-gray-400 transition-colors">
-            <button type="button" onclick="this.closest('.trailer-row').remove()" class="text-gray-400 hover:text-red-500 transition-colors p-1" title="Remove Trailer">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
-        `;
-        container.appendChild(row);
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
 </script>
 
 

@@ -9,10 +9,23 @@ require_once 'dbconnect.php';
 $sql = "SELECT id, fullname, email, created_at FROM users ORDER BY created_at DESC";
 $result = $conn->query($sql);
 $total_users = $result ? $result->num_rows : 0;
+
+// Fetch total bookings and total revenue from the bookings table
+$stats_result = $conn->query("SELECT COUNT(*) as total_bookings, COALESCE(SUM(total_amount), 0) as total_revenue FROM bookings");
+$stats = $stats_result ? $stats_result->fetch_assoc() : ['total_bookings' => 0, 'total_revenue' => 0];
+$total_bookings = $stats['total_bookings'];
+$total_revenue = $stats['total_revenue'];
 ?>
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
+    <script>
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CineBook Admin - User Management</title>
@@ -79,14 +92,14 @@ $total_users = $result ? $result->num_rows : 0;
                 
                 <div class="bg-white dark:bg-bgCard border border-gray-200 dark:border-borderMain rounded-xl p-5 shadow-sm">
                     <p class="text-sm font-medium text-gray-500 dark:text-textMuted mb-2">Total Bookings</p>
-                    <h3 class="text-3xl font-bold tracking-tight text-brand mb-1">--</h3>
-                    <p class="text-xs text-gray-400 dark:text-textMuted">Requires bookings table</p>
+                    <h3 class="text-3xl font-bold tracking-tight text-brand mb-1"><?php echo number_format($total_bookings); ?></h3>
+                    <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Across all users</p>
                 </div>
 
                 <div class="bg-white dark:bg-bgCard border border-gray-200 dark:border-borderMain rounded-xl p-5 shadow-sm">
                     <p class="text-sm font-medium text-gray-500 dark:text-textMuted mb-2">Total Revenue</p>
-                    <h3 class="text-3xl font-bold tracking-tight text-brand mb-1">₹--</h3>
-                    <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Requires bookings table</p>
+                    <h3 class="text-3xl font-bold tracking-tight text-brand mb-1">₹<?php echo number_format($total_revenue, 2); ?></h3>
+                    <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">From ticket sales</p>
                 </div>
             </div>
 
@@ -120,17 +133,22 @@ $total_users = $result ? $result->num_rows : 0;
                             
                             <?php if ($total_users > 0): ?>
                                 <?php while($user = $result->fetch_assoc()): ?>
-                                    <?php 
-                                        // 1. Get first letter of fullname for avatar
-                                        $initial = strtoupper(substr(trim($user['fullname']), 0, 1));
-                                        
-                                        // 2. Format the created_at timestamp to just show YYYY-MM-DD
-                                        $registered_date = date('Y-m-d', strtotime($user['created_at']));
-                                        
-                                        // 3. MOCK DATA for bookings and spent (Since they don't exist in your users table)
-                                        $mock_bookings = rand(0, 30);
-                                        $mock_spent = "$" . ($mock_bookings * rand(12, 20));
-                                    ?>
+                                        <?php 
+                                            // 1. Get first letter of fullname for avatar
+                                            $initial = strtoupper(substr(trim($user['fullname']), 0, 1));
+                                            
+                                            // 2. Format the created_at timestamp to just show YYYY-MM-DD
+                                            $registered_date = date('Y-m-d', strtotime($user['created_at']));
+                                            
+                                            // 3. Get REAL bookings and spent from database
+                                            $user_stats_stmt = $conn->prepare("SELECT COUNT(*) as bookings, COALESCE(SUM(total_amount), 0) as spent FROM bookings WHERE user_id = ?");
+                                            $user_stats_stmt->bind_param("i", $user['id']);
+                                            $user_stats_stmt->execute();
+                                            $user_stats = $user_stats_stmt->get_result()->fetch_assoc();
+                                            $user_bookings = $user_stats['bookings'];
+                                            $user_spent = '₹' . number_format($user_stats['spent'], 2);
+                                            $user_stats_stmt->close();
+                                        ?>
                                     <tr class="user-row hover:bg-gray-50 dark:hover:bg-bgMain/50 transition-colors group">
                                         <td class="px-6 py-4">
                                             <div class="flex items-center gap-3">
@@ -155,10 +173,10 @@ $total_users = $result ? $result->num_rows : 0;
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                                            <?php echo $mock_bookings; ?>
+                                            <?php echo $user_bookings; ?>
                                         </td>
                                         <td class="px-6 py-4 font-semibold text-brand">
-                                            <?php echo $mock_spent; ?>
+                                            <?php echo $user_spent; ?>
                                         </td>
                                         <td class="px-6 py-4">
                                             <span class="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 rounded-full text-xs font-medium">Active</span>

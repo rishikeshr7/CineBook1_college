@@ -177,8 +177,13 @@ $formats = explode(',', $movie['formats']);
         <div class="hero-blur-bg dark:opacity-20 opacity-10"></div>
         
         <div class="max-w-6xl mx-auto px-6 pt-16 flex flex-col md:flex-row gap-10 relative z-10">
-            <div class="shrink-0 mx-auto md:mx-0 w-[260px] md:w-[320px]">
+            <div class="shrink-0 mx-auto md:mx-0 w-[260px] md:w-[320px] relative">
                 <img src="<?php echo $poster_src; ?>" alt="<?php echo htmlspecialchars($movie['title']); ?>" class="w-full h-auto rounded-xl shadow-2xl object-cover border border-gray-200 dark:border-gray-800">
+                <?php if (isset($movie['is_rerelease']) && $movie['is_rerelease'] == 1): ?>
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 bg-[#F5C518] text-black text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-b-lg z-10 shadow-md whitespace-nowrap">
+                        Re-Release
+                    </div>
+                <?php endif; ?>
             </div>
 
             <div class="flex-1 flex flex-col justify-center space-y-5">

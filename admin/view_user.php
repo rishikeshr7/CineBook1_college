@@ -40,14 +40,55 @@ $initial = strtoupper(substr(trim($user['fullname']), 0, 1));
 $registered_date = date('F j, Y, g:i a', strtotime($user['created_at']));
 $member_since = date('M Y', strtotime($user['created_at']));
 
-// 3. MOCK DATA for user stats (Replace these later with real DB queries)
-$mock_total_bookings = rand(5, 42);
-$mock_total_spent = "$" . ($mock_total_bookings * rand(12, 18));
-$mock_last_active = date('M j, Y', strtotime('-' . rand(1, 14) . ' days'));
+// 3. Get REAL stats from bookings table
+$stats_stmt = $conn->prepare("SELECT COUNT(*) as total_bookings, COALESCE(SUM(total_amount), 0) as total_spent FROM bookings WHERE user_id = ?");
+$stats_stmt->bind_param("i", $user_id);
+$stats_stmt->execute();
+$user_stats = $stats_stmt->get_result()->fetch_assoc();
+$real_total_bookings = $user_stats['total_bookings'];
+$real_total_spent = '₹' . number_format($user_stats['total_spent'], 2);
+$stats_stmt->close();
+
+// Get last booking date as "Last Active"
+$last_active_stmt = $conn->prepare("SELECT booking_date FROM bookings WHERE user_id = ? ORDER BY booking_date DESC LIMIT 1");
+$last_active_stmt->bind_param("i", $user_id);
+$last_active_stmt->execute();
+$last_active_res = $last_active_stmt->get_result();
+$last_active_row = $last_active_res->fetch_assoc();
+$real_last_active = $last_active_row ? date('M j, Y', strtotime($last_active_row['booking_date'])) : 'No activity';
+$last_active_stmt->close();
+
+// Fetch real bookings for this user
+$bookings_stmt = $conn->prepare("
+    SELECT b.seat_numbers, b.total_amount, b.booking_date, 
+           m.title as movie_title, 
+           s.show_date, s.show_time
+    FROM bookings b
+    JOIN showtimes s ON b.showtime_id = s.id
+    JOIN movies m ON s.movie_id = m.id
+    WHERE b.user_id = ?
+    ORDER BY b.booking_date DESC
+    LIMIT 10
+");
+$bookings_stmt->bind_param("i", $user_id);
+$bookings_stmt->execute();
+$bookings_result = $bookings_stmt->get_result();
+$user_bookings = [];
+while ($b = $bookings_result->fetch_assoc()) {
+    $user_bookings[] = $b;
+}
+$bookings_stmt->close();
 ?>
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
+    <script>
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CineBook Admin - View User</title>
@@ -168,19 +209,19 @@ $mock_last_active = date('M j, Y', strtotime('-' . rand(1, 14) . ' days'));
                             <p class="text-sm font-medium text-gray-500 dark:text-textMuted mb-1 flex items-center gap-2">
                                 <i data-lucide="ticket" class="w-4 h-4"></i> Total Bookings
                             </p>
-                            <h3 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"><?php echo $mock_total_bookings; ?></h3>
+                            <h3 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"><?php echo $real_total_bookings; ?></h3>
                         </div>
                         <div class="bg-white dark:bg-bgCard border border-gray-200 dark:border-borderMain rounded-xl p-5 shadow-sm flex flex-col justify-center">
                             <p class="text-sm font-medium text-gray-500 dark:text-textMuted mb-1 flex items-center gap-2">
-                                <i data-lucide="dollar-sign" class="w-4 h-4"></i> Total Spent
+                                <i data-lucide="indian-rupee" class="w-4 h-4"></i> Total Spent
                             </p>
-                            <h3 class="text-2xl font-bold tracking-tight text-brand"><?php echo $mock_total_spent; ?></h3>
+                            <h3 class="text-2xl font-bold tracking-tight text-brand"><?php echo $real_total_spent; ?></h3>
                         </div>
                         <div class="bg-white dark:bg-bgCard border border-gray-200 dark:border-borderMain rounded-xl p-5 shadow-sm flex flex-col justify-center">
                             <p class="text-sm font-medium text-gray-500 dark:text-textMuted mb-1 flex items-center gap-2">
                                 <i data-lucide="activity" class="w-4 h-4"></i> Last Active
                             </p>
-                            <h3 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white mt-1"><?php echo $mock_last_active; ?></h3>
+                            <h3 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white mt-1"><?php echo $real_last_active; ?></h3>
                         </div>
                     </div>
 
@@ -202,42 +243,36 @@ $mock_last_active = date('M j, Y', strtotime('-' . rand(1, 14) . ' days'));
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 dark:divide-borderMain text-sm">
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-bgMain/50 transition-colors">
-                                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Dune: Part Two</td>
-                                        <td class="px-6 py-4 text-gray-500 dark:text-textMuted">Tomorrow, 7:30 PM</td>
-                                        <td class="px-6 py-4 text-gray-900 dark:text-gray-200 font-medium">F12, F13</td>
-                                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">$32.00</td>
-                                        <td class="px-6 py-4">
-                                            <span class="px-2 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 rounded text-xs font-semibold">Upcoming</span>
-                                        </td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-bgMain/50 transition-colors">
-                                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Oppenheimer</td>
-                                        <td class="px-6 py-4 text-gray-500 dark:text-textMuted">Oct 12, 2023, 6:00 PM</td>
-                                        <td class="px-6 py-4 text-gray-900 dark:text-gray-200 font-medium">B04, B05, B06</td>
-                                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">$45.00</td>
-                                        <td class="px-6 py-4">
-                                            <span class="px-2 py-1 bg-gray-100 dark:bg-borderMain text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-inputBorder rounded text-xs font-semibold">Completed</span>
-                                        </td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-bgMain/50 transition-colors">
-                                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">The Batman</td>
-                                        <td class="px-6 py-4 text-gray-500 dark:text-textMuted">Aug 05, 2023, 9:15 PM</td>
-                                        <td class="px-6 py-4 text-gray-900 dark:text-gray-200 font-medium">H08, H09</td>
-                                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">$28.00</td>
-                                        <td class="px-6 py-4">
-                                            <span class="px-2 py-1 bg-gray-100 dark:bg-borderMain text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-inputBorder rounded text-xs font-semibold">Completed</span>
-                                        </td>
-                                    </tr>
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-bgMain/50 transition-colors">
-                                        <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">Spider-Man: No Way Home</td>
-                                        <td class="px-6 py-4 text-gray-500 dark:text-textMuted">Dec 20, 2021, 4:00 PM</td>
-                                        <td class="px-6 py-4 text-gray-900 dark:text-gray-200 font-medium">J15</td>
-                                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">$14.00</td>
-                                        <td class="px-6 py-4">
-                                            <span class="px-2 py-1 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded text-xs font-semibold">Cancelled</span>
-                                        </td>
-                                    </tr>
+                                    <?php if (!empty($user_bookings)): ?>
+                                        <?php foreach ($user_bookings as $booking): 
+                                            $show_datetime = strtotime($booking['show_date'] . ' ' . $booking['show_time']);
+                                            $booking_date_fmt = date('M d, Y, g:i A', $show_datetime);
+                                            $amount_fmt = '₹' . number_format($booking['total_amount'], 2);
+                                            
+                                            // Determine status based on showtime vs now
+                                            if ($show_datetime > time()) {
+                                                $status_label = 'Upcoming';
+                                                $status_class = 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20';
+                                            } else {
+                                                $status_label = 'Completed';
+                                                $status_class = 'bg-gray-100 dark:bg-borderMain text-gray-600 dark:text-gray-400 border-gray-200 dark:border-inputBorder';
+                                            }
+                                        ?>
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-bgMain/50 transition-colors">
+                                            <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100"><?php echo htmlspecialchars($booking['movie_title']); ?></td>
+                                            <td class="px-6 py-4 text-gray-500 dark:text-textMuted"><?php echo $booking_date_fmt; ?></td>
+                                            <td class="px-6 py-4 text-gray-900 dark:text-gray-200 font-medium"><?php echo htmlspecialchars($booking['seat_numbers']); ?></td>
+                                            <td class="px-6 py-4 font-medium text-gray-900 dark:text-white"><?php echo $amount_fmt; ?></td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 <?php echo $status_class; ?> border rounded text-xs font-semibold"><?php echo $status_label; ?></span>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="5" class="px-6 py-8 text-center text-gray-500 dark:text-textMuted">No bookings found for this user.</td>
+                                        </tr>
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>

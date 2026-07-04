@@ -49,7 +49,7 @@ $inactive_class = "text-gray-500 dark:text-textMuted hover:text-gray-900 hover:b
             <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
             <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i> Toggle Theme
         </button>
-        <a href="../index.php" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 dark:text-textMuted hover:text-gray-900 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-bgCard rounded-lg font-medium transition-colors">
+        <a href="../admin_to_site.php" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 dark:text-textMuted hover:text-gray-900 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-bgCard rounded-lg font-medium transition-colors">
             <i data-lucide="external-link" class="w-5 h-5"></i> Back to Site
         </a>
         <a href="logout.php" class="flex items-center gap-3 px-3 py-2.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-400/10 rounded-lg font-medium transition-colors">

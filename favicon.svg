@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <mask id="film-cutout-exact">
+        <rect width="24" height="24" fill="white"/>
+        <rect x="8.5" y="4" width="7" height="7" fill="black" rx="0.5"/>
+        <rect x="8.5" y="13" width="7" height="7" fill="black" rx="0.5"/>
+        <rect x="4" y="4" width="2" height="2.5" fill="black" rx="0.5"/>
+        <rect x="4" y="8.5" width="2" height="2.5" fill="black" rx="0.5"/>
+        <rect x="4" y="13" width="2" height="2.5" fill="black" rx="0.5"/>
+        <rect x="4" y="17.5" width="2" height="2.5" fill="black" rx="0.5"/>
+        <rect x="18" y="4" width="2" height="2.5" fill="black" rx="0.5"/>
+        <rect x="18" y="8.5" width="2" height="2.5" fill="black" rx="0.5"/>
+        <rect x="18" y="13" width="2" height="2.5" fill="black" rx="0.5"/>
+        <rect x="18" y="17.5" width="2" height="2.5" fill="black" rx="0.5"/>
+    </mask>
+    <rect x="1.5" y="1.5" width="21" height="21" rx="4" fill="#F5C518" mask="url(#film-cutout-exact)"/>
+</svg>

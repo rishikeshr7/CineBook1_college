@@ -58,10 +58,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $director      = trim($_POST['director'] ?? '');
     $release_date  = trim($_POST['release_date'] ?? '');
     $rating        = trim($_POST['rating'] ?? ''); // Rating is now text
-    $status        = trim($_POST['status'] ?? '');
     $formats       = trim($_POST['formats'] ?? '');
     $trailer_url   = trim($_POST['trailer_url'] ?? ''); 
     $is_rerelease  = isset($_POST['is_rerelease']) ? 1 : 0;
+
+    // Auto-determine status from release date
+    if (!empty($release_date) && strtotime($release_date) !== false) {
+        $release_ts = strtotime($release_date);
+        $today_ts = strtotime('today');
+        $status = ($release_ts <= $today_ts) ? 'Now Showing' : 'Coming Soon';
+    } else {
+        $status = trim($_POST['status'] ?? 'Now Showing');
+    }
 
     if (empty($title) || empty($duration) || empty($genre)) {
         header("Location: admin_dashboard.php?error=missingfields");
@@ -325,7 +333,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
                             <div>
                                 <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Release Date</label>
-                                <input type="text" name="release_date" value="<?php echo htmlspecialchars($movie['release_date']); ?>" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none transition-colors">
+                                <input type="text" id="edit-release-date" name="release_date" value="<?php echo htmlspecialchars($movie['release_date']); ?>" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none transition-colors">
                             </div>
                         </div>
 
@@ -335,11 +343,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <input type="text" name="rating" placeholder="e.g. 8.5/10, Excellent, etc." value="<?php echo htmlspecialchars($movie['rating']); ?>" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none transition-colors">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Status</label>
-                                <select name="status" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none transition-colors">
-                                    <option value="Now Showing" <?php if($movie['status'] == 'Now Showing') echo 'selected'; ?>>Now Showing</option>
-                                    <option value="Coming Soon" <?php if($movie['status'] == 'Coming Soon') echo 'selected'; ?>>Coming Soon</option>
-                                </select>
+                                <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Status <span class="text-xs text-gray-400 font-normal">(auto-detected)</span></label>
+                                <input type="hidden" name="status" id="edit-status-hidden" value="<?php echo htmlspecialchars($movie['status']); ?>">
+                                <div id="edit-status-badge" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder rounded-lg p-3 text-sm font-bold transition-colors text-gray-400 dark:text-gray-500">
+                                    Detecting...
+                                </div>
                             </div>
                         </div>
 
@@ -616,6 +624,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 label.innerHTML = `<i data-lucide="check" class="w-5 h-5 text-green-500"></i>`;
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             }
+        }
+        // Auto-detect status from release date
+        const editReleaseDateInput = document.getElementById('edit-release-date');
+        const editStatusHidden = document.getElementById('edit-status-hidden');
+        const editStatusBadge = document.getElementById('edit-status-badge');
+
+        function updateEditStatusFromDate() {
+            const dateStr = editReleaseDateInput.value.trim();
+            if (!dateStr) {
+                editStatusBadge.textContent = 'Enter release date to detect';
+                editStatusBadge.className = 'w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder rounded-lg p-3 text-sm font-bold transition-colors text-gray-400 dark:text-gray-500';
+                return;
+            }
+            const parsed = new Date(dateStr);
+            if (isNaN(parsed.getTime())) {
+                editStatusBadge.textContent = 'Invalid date format';
+                editStatusBadge.className = 'w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm font-bold transition-colors text-red-500';
+                return;
+            }
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            parsed.setHours(0, 0, 0, 0);
+
+            if (parsed <= today) {
+                editStatusHidden.value = 'Now Showing';
+                editStatusBadge.textContent = '● Now Showing';
+                editStatusBadge.className = 'w-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 text-sm font-bold transition-colors text-emerald-600 dark:text-emerald-400';
+            } else {
+                editStatusHidden.value = 'Coming Soon';
+                editStatusBadge.textContent = '● Coming Soon';
+                editStatusBadge.className = 'w-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm font-bold transition-colors text-blue-600 dark:text-blue-400';
+            }
+        }
+
+        if (editReleaseDateInput) {
+            editReleaseDateInput.addEventListener('input', updateEditStatusFromDate);
+            editReleaseDateInput.addEventListener('change', updateEditStatusFromDate);
+            updateEditStatusFromDate();
         }
     </script>
 </body>

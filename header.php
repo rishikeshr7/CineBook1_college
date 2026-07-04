@@ -84,14 +84,22 @@ if (isset($_GET['city'])) {
             <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
                 
                 <?php 
+                    $is_admin_visit = isset($_SESSION['is_admin_visit']) && $_SESSION['is_admin_visit'] === true;
                     $email = $_SESSION['user_email'];
-                    $display_name = explode('@', $email)[0]; 
+                    $display_name = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : explode('@', $email)[0]; 
                 ?>
 
                 <div class="relative group cursor-pointer">
                     <div class="flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors pb-1 pt-1">
-                        <i data-lucide="user" class="w-5 h-5"></i>
-                        <span class="text-sm font-semibold hidden md:block"><?php echo htmlspecialchars($display_name); ?></span>
+                        <?php if ($is_admin_visit): ?>
+                            <span class="flex items-center gap-1.5 bg-[#F5C518] text-black text-xs font-bold px-2.5 py-1 rounded-full">
+                                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                                <span class="hidden md:block">CineBook Admin</span>
+                            </span>
+                        <?php else: ?>
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                            <span class="text-sm font-semibold hidden md:block"><?php echo htmlspecialchars($display_name); ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div class="absolute right-0 mt-1 w-56 bg-white dark:bg-[#111111] border border-gray-200 dark:border-[#262626] rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
@@ -102,7 +110,20 @@ if (isset($_GET['city'])) {
                             <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                                 <?php echo htmlspecialchars($email); ?>
                             </p>
+                            <?php if ($is_admin_visit): ?>
+                                <span class="inline-flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-[#b08f00] dark:text-[#F5C518] bg-yellow-50 dark:bg-yellow-950/30 px-2 py-0.5 rounded-full">
+                                    <i data-lucide="shield-check" class="w-3 h-3"></i> Admin Session
+                                </span>
+                            <?php endif; ?>
                         </div>
+                        <?php if ($is_admin_visit): ?>
+                        <div class="py-1 border-b border-gray-200 dark:border-[#262626]">
+                            <a href="admin/admin_dashboard.php" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[#F5C518] hover:bg-yellow-50 dark:hover:bg-yellow-950/20 transition-colors">
+                                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                                Admin Dashboard
+                            </a>
+                        </div>
+                        <?php endif; ?>
                         <div class="py-1 border-b border-gray-200 dark:border-[#262626]">
                             <a href="my_bookings.php" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors">
                                 <i data-lucide="ticket" class="w-4 h-4"></i>
@@ -136,14 +157,14 @@ if (isset($_GET['city'])) {
 </header>
 
 <div id="signin-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 backdrop-blur-sm transition-opacity">
-    <div class="bg-[#121212] border border-[#262626] rounded-xl w-full max-w-sm mx-4 shadow-2xl relative flex flex-col font-sans">
-        <div class="flex items-center justify-between p-6 border-b border-[#262626]">
-            <h2 class="text-2xl font-bold text-white tracking-tight">Sign In</h2>
-            <button id="close-modal-btn" class="text-gray-400 hover:text-white transition-colors">
-                <i data-lucide="x" class="w-5 h-5"></i>
+    <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#262626] rounded-[24px] w-full max-w-md mx-4 shadow-2xl relative flex flex-col font-sans">
+        <div class="flex items-center justify-between px-8 py-6 border-b border-gray-100 dark:border-[#262626]">
+            <h2 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Sign In</h2>
+            <button id="close-modal-btn" class="text-gray-900 dark:text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
             </button>
         </div>
-        <div class="p-6">
+        <div class="p-8">
             <form action="user_login.php" method="POST" class="space-y-5">
                 <input type="hidden" name="redirect_to" value="<?php echo htmlspecialchars($_SERVER['REQUEST_URI']); ?>">
                 <?php if (isset($_GET['error'])): ?>
@@ -151,7 +172,7 @@ if (isset($_GET['city'])) {
                     $signin_errors = ['wrongpassword', 'nouser', 'emptyfields', 'sqlerror'];
                     if (in_array($_GET['error'], $signin_errors)): 
                     ?>
-                        <div class="bg-red-950/20 border border-red-900/50 text-red-400 text-xs font-semibold p-3 rounded-lg flex items-center gap-2 mb-4">
+                        <div class="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-xs font-semibold p-3 rounded-lg flex items-center gap-2 mb-4">
                             <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
                             <span>
                                 <?php 
@@ -166,33 +187,33 @@ if (isset($_GET['city'])) {
                     <?php endif; ?>
                 <?php endif; ?>
                 <div class="space-y-2">
-                    <label for="user-email" class="block text-sm font-semibold text-gray-200">Email</label>
+                    <label for="user-email" class="block text-sm font-bold text-gray-900 dark:text-gray-200">Email</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="mail" class="h-5 w-5 text-gray-500"></i>
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-lucide="mail" class="h-5 w-5 text-gray-400 dark:text-gray-500"></i>
                         </div>
                         <input type="email" id="user-email" name="email" required placeholder="Enter your email" 
-                            class="block w-full pl-10 pr-3 py-2.5 border border-[#262626] rounded-lg bg-[#1a1a1a] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent sm:text-sm transition-all">
+                            class="block w-full pl-11 pr-4 py-3.5 border border-gray-200 dark:border-[#262626] rounded-xl bg-[#f8f9fa] dark:bg-[#1a1a1a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent text-base transition-all">
                     </div>
                 </div>
 
                 <div class="space-y-2">
-                    <label for="user-password" class="block text-sm font-semibold text-gray-200">Password</label>
+                    <label for="user-password" class="block text-sm font-bold text-gray-900 dark:text-gray-200">Password</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="lock" class="h-5 w-5 text-gray-500"></i>
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-lucide="lock" class="h-5 w-5 text-gray-400 dark:text-gray-500"></i>
                         </div>
                         <input type="password" id="user-password" name="password" required placeholder="Enter your password" 
-                            class="block w-full pl-10 pr-3 py-2.5 border border-[#262626] rounded-lg bg-[#1a1a1a] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent sm:text-sm transition-all">
+                            class="block w-full pl-11 pr-4 py-3.5 border border-gray-200 dark:border-[#262626] rounded-xl bg-[#f8f9fa] dark:bg-[#1a1a1a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent text-base transition-all">
                     </div>
                 </div>
 
-                <button type="submit" class="w-full flex justify-center py-3 px-4 rounded-lg text-sm font-bold text-black bg-[#F5C518] hover:bg-[#eab308] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#121212] focus:ring-[#F5C518] transition-colors mt-6">
+                <button type="submit" class="w-full flex justify-center py-4 px-4 rounded-xl text-base font-bold text-black bg-[#F5C518] hover:bg-[#eab308] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#121212] focus:ring-[#F5C518] transition-colors mt-8 shadow-sm">
                     Sign In
                 </button>
             </form>
             
-            <div class="mt-6 text-center text-sm text-gray-400">
+            <div class="mt-8 text-center text-[15px] text-gray-500 dark:text-gray-400">
                 Don't have an account? <button type="button" id="switch-to-signup" class="text-[#F5C518] font-bold hover:underline cursor-pointer">Sign up</button>
             </div>
         </div>
@@ -200,15 +221,15 @@ if (isset($_GET['city'])) {
 </div>
 
 <div id="signup-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 backdrop-blur-sm transition-opacity">
-    <div class="bg-[#121212] border border-[#262626] rounded-xl w-full max-w-sm mx-4 shadow-2xl relative flex flex-col font-sans">
-        <div class="flex items-center justify-between p-6 border-b border-[#262626]">
-            <h2 class="text-2xl font-bold text-white tracking-tight">Create Account</h2>
-            <button id="close-signup-btn" class="text-gray-400 hover:text-white transition-colors">
-                <i data-lucide="x" class="w-5 h-5"></i>
+    <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#262626] rounded-[24px] w-full max-w-md mx-4 shadow-2xl relative flex flex-col font-sans">
+        <div class="flex items-center justify-between px-8 py-6 border-b border-gray-100 dark:border-[#262626]">
+            <h2 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Create Account</h2>
+            <button id="close-signup-btn" class="text-gray-900 dark:text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
             </button>
         </div>
         
-        <div class="p-6">
+        <div class="p-8">
             <form action="user_signup.php" method="POST" class="space-y-4">
                 <input type="hidden" name="redirect_to" value="<?php echo htmlspecialchars($_SERVER['REQUEST_URI']); ?>">
                 <?php if (isset($_GET['error'])): ?>
@@ -216,7 +237,7 @@ if (isset($_GET['city'])) {
                     $signup_errors = ['invalidemail', 'emailregistered', 'signup_emptyfields', 'signup_sqlerror'];
                     if (in_array($_GET['error'], $signup_errors)): 
                     ?>
-                        <div class="bg-red-950/20 border border-red-900/50 text-red-400 text-xs font-semibold p-3 rounded-lg flex items-center gap-2 mb-4">
+                        <div class="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-xs font-semibold p-3 rounded-lg flex items-center gap-2 mb-4">
                             <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
                             <span>
                                 <?php 
@@ -231,55 +252,55 @@ if (isset($_GET['city'])) {
                     <?php endif; ?>
                 <?php endif; ?>
                 <div class="space-y-2">
-                    <label for="reg-name" class="block text-sm font-semibold text-gray-200">Full Name</label>
+                    <label for="reg-name" class="block text-sm font-bold text-gray-900 dark:text-gray-200">Full Name</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="user" class="h-5 w-5 text-gray-500"></i>
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-lucide="user" class="h-5 w-5 text-gray-400 dark:text-gray-500"></i>
                         </div>
                         <input type="text" id="reg-name" name="fullname" required placeholder="Enter your full name" 
-                            class="block w-full pl-10 pr-3 py-2.5 border border-[#262626] rounded-lg bg-[#1a1a1a] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent sm:text-sm transition-all">
+                            class="block w-full pl-11 pr-4 py-3.5 border border-gray-200 dark:border-[#262626] rounded-xl bg-[#f8f9fa] dark:bg-[#1a1a1a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent text-base transition-all">
                     </div>
                 </div>
 
                 <div class="space-y-2">
-                    <label for="reg-email" class="block text-sm font-semibold text-gray-200">Email</label>
+                    <label for="reg-email" class="block text-sm font-bold text-gray-900 dark:text-gray-200">Email</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="mail" class="h-5 w-5 text-gray-500"></i>
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-lucide="mail" class="h-5 w-5 text-gray-400 dark:text-gray-500"></i>
                         </div>
                         <input type="email" id="reg-email" name="email" required placeholder="Enter your email" 
-                            class="block w-full pl-10 pr-3 py-2.5 border border-[#262626] rounded-lg bg-[#1a1a1a] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent sm:text-sm transition-all">
+                            class="block w-full pl-11 pr-4 py-3.5 border border-gray-200 dark:border-[#262626] rounded-xl bg-[#f8f9fa] dark:bg-[#1a1a1a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent text-base transition-all">
                     </div>
                 </div>
 
                 <div class="space-y-2">
-                    <label for="reg-phone" class="block text-sm font-semibold text-gray-200">Phone Number</label>
+                    <label for="reg-phone" class="block text-sm font-bold text-gray-900 dark:text-gray-200">Phone Number</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="phone" class="h-5 w-5 text-gray-500"></i>
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-lucide="phone" class="h-5 w-5 text-gray-400 dark:text-gray-500"></i>
                         </div>
                         <input type="tel" id="reg-phone" name="phone" required placeholder="Enter your phone number" 
-                            class="block w-full pl-10 pr-3 py-2.5 border border-[#262626] rounded-lg bg-[#1a1a1a] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent sm:text-sm transition-all">
+                            class="block w-full pl-11 pr-4 py-3.5 border border-gray-200 dark:border-[#262626] rounded-xl bg-[#f8f9fa] dark:bg-[#1a1a1a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent text-base transition-all">
                     </div>
                 </div>
 
                 <div class="space-y-2">
-                    <label for="reg-password" class="block text-sm font-semibold text-gray-200">Password</label>
+                    <label for="reg-password" class="block text-sm font-bold text-gray-900 dark:text-gray-200">Password</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="lock" class="h-5 w-5 text-gray-500"></i>
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-lucide="lock" class="h-5 w-5 text-gray-400 dark:text-gray-500"></i>
                         </div>
                         <input type="password" id="reg-password" name="password" required placeholder="Create a password" 
-                            class="block w-full pl-10 pr-3 py-2.5 border border-[#262626] rounded-lg bg-[#1a1a1a] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent sm:text-sm transition-all">
+                            class="block w-full pl-11 pr-4 py-3.5 border border-gray-200 dark:border-[#262626] rounded-xl bg-[#f8f9fa] dark:bg-[#1a1a1a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F5C518] focus:border-transparent text-base transition-all">
                     </div>
                 </div>
 
-                <button type="submit" class="w-full flex justify-center py-3 px-4 rounded-lg text-sm font-bold text-black bg-[#F5C518] hover:bg-[#eab308] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#121212] focus:ring-[#F5C518] transition-colors mt-6">
+                <button type="submit" class="w-full flex justify-center py-4 px-4 rounded-xl text-base font-bold text-black bg-[#F5C518] hover:bg-[#eab308] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#121212] focus:ring-[#F5C518] transition-colors mt-8 shadow-sm">
                     Create Account
                 </button>
             </form>
             
-            <div class="mt-6 text-center text-sm text-gray-400">
+            <div class="mt-8 text-center text-[15px] text-gray-500 dark:text-gray-400">
                 Already have an account? <button type="button" id="switch-to-signin" class="text-[#F5C518] font-bold hover:underline cursor-pointer">Sign in</button>
             </div>
         </div>

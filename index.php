@@ -8,16 +8,15 @@ $_SESSION['user_city'] = $selected_city;
 
 $now_showing = [];
 $coming_soon = [];
-$featured_movie = null;
 
-// 2. Fetch "Now Showing" movies specifically playing in the selected city
-$ns_sql = "
-    SELECT DISTINCT m.* FROM movies m 
-    INNER JOIN showtimes s ON m.id = s.movie_id 
-    WHERE m.status = 'Now Showing' AND s.city = ? AND s.show_date >= CURRENT_DATE
-    ORDER BY m.created_at DESC
-";
 if (isset($conn)) {
+    // 2. Fetch "Now Showing" movies specifically playing in the selected city
+    $ns_sql = "
+        SELECT DISTINCT m.* FROM movies m 
+        INNER JOIN showtimes s ON m.id = s.movie_id 
+        WHERE m.status = 'Now Showing' AND s.city = ? AND s.show_date >= CURRENT_DATE
+        ORDER BY m.created_at DESC
+    ";
     $ns_stmt = $conn->prepare($ns_sql);
     if ($ns_stmt) {
         $ns_stmt->bind_param("s", $selected_city);
@@ -29,37 +28,89 @@ if (isset($conn)) {
         $ns_stmt->close();
     }
 
-    // 3. Fetch "Coming Soon" movies globally
-    $cs_sql = "SELECT * FROM movies WHERE status = 'Coming Soon' ORDER BY created_at DESC";
-    $cs_result = $conn->query($cs_sql);
-    if ($cs_result && $cs_result->num_rows > 0) {
-        while($row = $cs_result->fetch_assoc()) {
+    // 3. Fetch ALL "Coming Soon" movies globally
+    $cs_result = $conn->query("SELECT * FROM movies WHERE status = 'Coming Soon' ORDER BY created_at DESC");
+    if ($cs_result) {
+        while ($row = $cs_result->fetch_assoc()) {
             $coming_soon[] = $row;
         }
     }
 }
 
-// Fallback dummy data for visual matching if DB is empty
-if (empty($now_showing) && empty($coming_soon)) {
-    $featured_movie = [
-        'title' => 'Dune: Part Two',
-        'status' => 'Now Showing',
-        'certification' => 'UA',
-        'duration' => '166 min',
-        'genre' => 'Sci-Fi, Adventure, Drama',
-        'synopsis' => 'Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.',
-        'poster_image' => 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=2574&auto=format&fit=crop', // Earth from space placeholder
-        'trailer_url' => '#'
-    ];
-} else {
-    // Set Featured Movie (Hero Banner)
-    if (!empty($now_showing)) {
-        $featured_movie = $now_showing[0];
-    } elseif (!empty($coming_soon)) {
-        $featured_movie = $coming_soon[0];
+// 4. Extract unique genres from all movies
+$all_genres = [];
+if (isset($conn)) {
+    $genres_res = $conn->query("SELECT genre FROM movies WHERE genre IS NOT NULL AND genre != ''");
+    if ($genres_res) {
+        while($r = $genres_res->fetch_assoc()) {
+            $parts = explode(',', $r['genre']);
+            foreach($parts as $p) {
+                $p = trim($p);
+                if (!empty($p) && !in_array($p, $all_genres)) {
+                    $all_genres[] = $p;
+                }
+            }
+        }
     }
 }
+sort($all_genres);
+
+// 5. Define 22 scheduled Indian languages + English
+$all_languages = [
+    'Assamese', 'Bengali', 'Bodo', 'Dogri', 'English', 'Gujarati', 'Hindi', 
+    'Kannada', 'Kashmiri', 'Konkani', 'Maithili', 'Malayalam', 'Manipuri', 
+    'Marathi', 'Nepali', 'Odia', 'Punjabi', 'Sanskrit', 'Santali', 'Sindhi', 
+    'Tamil', 'Telugu', 'Urdu'
+];
+
+// Build hero slides array guaranteeing the order: Now Showing -> Coming Soon
+$hero_movies = [];
+$hero_ids = [];
+
+// Step A: Add city-specific Now Showing movies first
+foreach ($now_showing as $movie) {
+    if (!in_array($movie['id'], $hero_ids)) {
+        $hero_movies[] = $movie;
+        $hero_ids[] = $movie['id'];
+    }
+}
+
+// Step C: Finally, add Coming Soon movies to the end of the rotation
+foreach ($coming_soon as $movie) {
+    if (!in_array($movie['id'], $hero_ids)) {
+        $hero_movies[] = $movie;
+        $hero_ids[] = $movie['id'];
+    }
+}
+
+// Fallback dummy data when DB is entirely empty
+if (empty($hero_movies)) {
+    $hero_movies = [
+        [
+            'id'            => 0,
+            'title'         => 'Welcome to CineBook',
+            'status'        => 'Now Showing',
+            'certification' => 'UA',
+            'duration'      => '—',
+            'genre'         => 'Browse movies below',
+            'synopsis'      => 'Your ultimate movie booking destination. Select a city to discover what\'s playing near you.',
+            'poster_image'  => 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2670&auto=format&fit=crop',
+        ]
+    ];
+}
+
+// Helper to get poster URL for a movie
+function heroImageUrl($movie) {
+    if (empty($movie['poster_image'])) {
+        return 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=2574&auto=format&fit=crop';
+    }
+    if (filter_var($movie['poster_image'], FILTER_VALIDATE_URL)) {
+        return htmlspecialchars($movie['poster_image']);
+    }
+    return 'admin/' . htmlspecialchars($movie['poster_image']);
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -91,190 +142,361 @@ if (empty($now_showing) && empty($coming_soon)) {
             font-family: 'Inter', sans-serif;
         }
 
-        /* Hide scrollbar for carousels */
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .hero-bg {
-            background-size: cover;
-            background-position: center;
-        }
+        .hero-bg { background-size: cover; background-position: center; }
 
         html:not(.dark) #theme-icon-moon { display: block !important; }
-        html:not(.dark) #theme-icon-sun { display: none !important; }
-        html.dark #theme-icon-moon { display: none !important; }
-        html.dark #theme-icon-sun { display: block !important; }
+        html:not(.dark) #theme-icon-sun  { display: none  !important; }
+        html.dark #theme-icon-moon       { display: none  !important; }
+        html.dark #theme-icon-sun        { display: block !important; }
+
+        /* ---- Carousel ---- */
+        .carousel-track {
+            display: flex;
+            transition: transform 0.45s cubic-bezier(0.4,0,0.2,1);
+            will-change: transform;
+        }
+        .carousel-card {
+            flex: 0 0 auto;
+        }
+        .carousel-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(245,197,24,0.92);
+            color: #000;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            transition: background 0.2s, transform 0.2s;
+        }
+        .carousel-arrow:hover { background: #F5C518; transform: translateY(-50%) scale(1.1); }
+        .carousel-arrow.left  { left:  -20px; }
+        .carousel-arrow.right { right: -20px; }
+        .carousel-dot {
+            width: 8px; height: 8px;
+            border-radius: 9999px;
+            background: #d1d5db;
+            transition: background 0.3s, width 0.3s;
+            cursor: pointer;
+            border: none;
+            padding: 0;
+        }
+        html.dark .carousel-dot { background: #4b5563; }
+        .carousel-dot.active    { background: #F5C518; width: 24px; }
+        .movie-poster-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .movie-poster-card:hover { transform: scale(1.04); }
+        .movie-poster-card img { width:100%; height:100%; object-fit:cover; display:block; }
+        .movie-poster-card .card-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            display: flex; flex-direction: column;
+            justify-content: flex-end;
+            padding: 12px;
+        }
+        .movie-poster-card:hover .card-overlay { opacity: 1; }
+        .badge-rerelease {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            background: #F5C518; color: #000; font-size: 10px; font-weight: 700;
+            letter-spacing: .05em; text-transform: uppercase;
+            padding: 3px 10px; border-radius: 0 0 8px 8px; z-index: 10;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body class="bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-300">
 
     <?php include("header.php"); ?>
 
-    <?php 
-        $hero_bg_image = '';
-        if ($featured_movie) {
-            // Using placeholder logic or actual DB path
-            if(filter_var($featured_movie['poster_image'], FILTER_VALIDATE_URL)) {
-                $hero_bg_image = htmlspecialchars($featured_movie['poster_image']);
-            } else if (!empty($featured_movie['poster_image'])) {
-                $hero_bg_image = 'admin/' . htmlspecialchars($featured_movie['poster_image']);
-            } else {
-                $hero_bg_image = 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=2574&auto=format&fit=crop';
-            }
-        }
-    ?>
+    <!-- ===================== HERO CAROUSEL ===================== -->
+    <section id="hero-carousel" class="relative overflow-hidden bg-black" style="height: clamp(420px, 58vw, 600px);">
 
-    <section class="hero-bg py-24 md:py-32 px-8 md:px-16 relative" style="background-image: linear-gradient(to right, rgba(10, 15, 25, 0.95) 0%, rgba(10, 15, 25, 0.7) 40%, rgba(10, 15, 25, 0.1) 100%), url('<?php echo $hero_bg_image; ?>');">
-        <div class="max-w-4xl space-y-7 relative z-10">
-            <?php if ($featured_movie): ?>
-                <div class="inline-flex items-center gap-2 bg-[#F5C518] text-black px-5 py-2 rounded-full text-sm font-bold uppercase tracking-wider">
-                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg>
-                    <?php echo htmlspecialchars($featured_movie['status']); ?>
+        <!-- Track -->
+        <div id="hero-track" class="flex w-full h-full transition-transform duration-700 ease-in-out" style="transform: translateX(0%);">
+
+        <!-- Slides -->
+        <?php foreach ($hero_movies as $hi => $hm): ?>
+        <?php $hBg = heroImageUrl($hm); ?>
+        <div class="hero-slide relative w-full h-full shrink-0" data-index="<?php echo $hi; ?>">
+
+            <!-- Blurred background -->
+            <div class="absolute inset-0" style="background:url('<?php echo $hBg; ?>') center/cover no-repeat; filter:blur(18px) brightness(0.3); transform:scale(1.08);"></div>
+            <!-- Dark overlay -->
+            <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/20"></div>
+
+            <!-- Content row -->
+            <div class="relative z-10 h-full w-full max-w-7xl mx-auto flex items-center px-16 md:px-24 gap-8 md:gap-16">
+
+                <!-- LEFT: Movie info -->
+                <div class="flex-1 min-w-0 flex flex-col justify-center gap-3 py-8">
+
+                    <!-- Status badge -->
+                    <div class="inline-flex items-center gap-2 self-start px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest
+                        <?php echo strtolower(trim($hm['status'])) === 'coming soon' ? 'bg-blue-500 text-white' : 'bg-[#F5C518] text-black'; ?>">
+                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg>
+                        <?php echo htmlspecialchars($hm['status']); ?>
+                    </div>
+
+                    <!-- Title -->
+                    <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight tracking-tight">
+                        <?php echo htmlspecialchars($hm['title']); ?>
+                    </h1>
+
+                    <!-- Meta -->
+                    <div class="flex flex-wrap items-center gap-2 text-sm">
+                        <?php if (!empty($hm['certification'])): ?>
+                        <span class="px-2.5 py-0.5 bg-white/15 border border-white/25 rounded text-white text-xs font-bold">
+                            <?php echo htmlspecialchars($hm['certification']); ?>
+                        </span>
+                        <?php endif; ?>
+                        <?php if (!empty($hm['duration'])): ?>
+                        <span class="text-gray-300"><?php echo htmlspecialchars($hm['duration']); ?></span>
+                        <?php endif; ?>
+                        <?php if (!empty($hm['genre'])): ?>
+                        <span class="text-[#F5C518] font-medium"><?php echo htmlspecialchars($hm['genre']); ?></span>
+                        <?php endif; ?>
+                        <?php if (!empty($hm['language'])): ?>
+                        <span class="text-gray-400">• <?php echo htmlspecialchars($hm['language']); ?></span>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Synopsis -->
+                    <?php if (!empty($hm['synopsis'])): ?>
+                    <p class="text-sm text-gray-300 leading-relaxed max-w-md line-clamp-3">
+                        <?php echo htmlspecialchars($hm['synopsis']); ?>
+                    </p>
+                    <?php endif; ?>
+
+                    <!-- CTA buttons -->
+                    <?php if (!empty($hm['id']) && $hm['id'] > 0): ?>
+                    <div class="flex flex-wrap gap-3 pt-1">
+                        <a href="watch_trailer.php?id=<?php echo $hm['id']; ?>"
+                           class="flex items-center gap-2 bg-[#F5C518] text-black px-5 py-2.5 rounded-xl font-bold hover:bg-[#eab308] transition-colors text-sm shadow-lg">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg>
+                            Watch Trailer
+                        </a>
+                        <a href="movie_details.php?id=<?php echo $hm['id']; ?>"
+                           class="flex items-center gap-2 bg-white/10 backdrop-blur border border-white/30 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-white/20 transition-colors text-sm">
+                            Book Tickets
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
-                <h1 class="text-6xl md:text-[6rem] leading-none font-extrabold text-white tracking-tight">
-                    <?php echo htmlspecialchars($featured_movie['title']); ?>
-                </h1>
-
-                <div class="flex items-center gap-4 text-white text-lg font-medium pt-1">
-                    <span class="px-4 py-1.5 bg-[#333333] rounded-full text-sm font-semibold text-white tracking-wide">
-                        <?php echo htmlspecialchars($featured_movie['certification']); ?>
-                    </span>
-                    <span class="text-white">•</span>
-                    <span><?php echo htmlspecialchars($featured_movie['duration']); ?></span>
-                    <span class="text-white">•</span>
-                    <span><?php echo htmlspecialchars($featured_movie['genre']); ?></span>
+                <!-- RIGHT: Poster image -->
+                <div class="hidden sm:flex flex-col items-center gap-4 py-8 shrink-0">
+                    <div class="relative group" style="width:clamp(140px,14vw,200px);">
+                        <div style="width:100%;padding-top:150%;position:relative;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(245,197,24,0.35), 0 4px 20px rgba(0,0,0,0.6);">
+                            <img src="<?php echo $hBg; ?>"
+                                 alt="<?php echo htmlspecialchars($hm['title']); ?>"
+                                 style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"
+                                 loading="lazy">
+                            <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.12) 0%,transparent 50%,transparent 100%);border-radius:16px;pointer-events:none;"></div>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <span class="text-xs font-bold px-3 py-1 rounded-full
+                                <?php echo strtolower(trim($hm['status'])) === 'coming soon' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-[#F5C518]/20 text-[#F5C518] border border-[#F5C518]/30'; ?>">
+                                <?php echo htmlspecialchars($hm['status']); ?>
+                            </span>
+                        </div>
+                    </div>
                 </div>
-
-                <p class="text-xl text-white max-w-2xl leading-relaxed pt-2">
-                    <?php echo htmlspecialchars($featured_movie['synopsis']); ?>
-                </p>
-
-                <div class="flex flex-wrap items-center gap-4 pt-4">
-                    <a href="watch_trailer.php?id=<?php echo $featured_movie['id']; ?>" class="flex items-center gap-2.5 bg-[#F5C518] text-black px-7 py-3 rounded-xl font-semibold hover:bg-[#eab308] transition-colors text-lg">
-                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg>
-                        Watch Trailer
-                    </a>
-                    
-                    <a href="movie_details.php?id=<?php echo $featured_movie['id'] ?? '#'; ?>" class="flex items-center justify-center bg-transparent border border-gray-300 text-white px-7 py-3 rounded-xl font-semibold hover:bg-white/10 transition-colors text-lg">
-                        Book Tickets
-                    </a>
-                </div>
-            <?php else: ?>
-                <h1 class="text-5xl md:text-7xl font-bold text-white tracking-tight">Welcome to CineBook</h1>
-                <p class="text-lg text-gray-300 max-w-2xl leading-relaxed">No movies are currently playing in <?php echo htmlspecialchars($selected_city); ?>. Try selecting a different location!</p>
-            <?php endif; ?>
+            </div>
         </div>
+        <?php endforeach; ?>
+        </div> <!-- End hero track -->
+
+        <!-- Left / Right arrows -->
+        <button id="hero-prev"
+                class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/50 backdrop-blur border border-white/20 text-white flex items-center justify-center hover:bg-[#F5C518] hover:text-black transition-all shadow-xl">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button id="hero-next"
+                class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/50 backdrop-blur border border-white/20 text-white flex items-center justify-center hover:bg-[#F5C518] hover:text-black transition-all shadow-xl">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+        </button>
+
+        <!-- Dot indicators -->
+        <div id="hero-dots" class="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2"></div>
+
+        <!-- Progress bar -->
+        <div id="hero-progress" class="absolute bottom-0 left-0 h-[3px] bg-[#F5C518] z-30 transition-none" style="width:0%"></div>
+
     </section>
 
-    <div class="bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-gray-800 py-4 px-8 transition-colors duration-300 shadow-sm">
-        <div class="flex flex-wrap items-center gap-4">
-            <div class="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200 mr-2">
-                <i data-lucide="filter" class="w-4 h-4"></i>
+    <!-- Filters Section -->
+    <div class="bg-gray-50 dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-[#262626] py-4 px-8 transition-colors duration-300 shadow-sm">
+        <div class="max-w-7xl mx-auto w-full flex flex-wrap items-center gap-4">
+            <div class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white mr-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="21 4 3 4 10 12 10 20 14 20 14 12 21 4"></polygon>
+                </svg>
                 Filters:
             </div>
             
             <div class="flex gap-2">
-                <button class="px-5 py-2 rounded-lg text-sm font-bold bg-primary text-black shadow-sm">All</button>
-                <button class="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Now Showing</button>
-                <button class="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Coming Soon</button>
+                <button id="btn-filter-all" onclick="setFilterStatus('All')" class="filter-btn px-4 py-2 rounded-xl text-sm font-bold bg-[#F5C518] text-black border border-transparent transition-colors">All</button>
+                <button id="btn-filter-ns" onclick="setFilterStatus('Now Showing')" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 dark:text-white bg-white dark:bg-black border border-gray-200 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors">Now Showing</button>
+                <button id="btn-filter-cs" onclick="setFilterStatus('Coming Soon')" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 dark:text-white bg-white dark:bg-black border border-gray-200 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors">Coming Soon</button>
             </div>
 
-            <div class="ml-2 flex gap-3">
-                <select class="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 outline-none hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer appearance-none pr-8 relative">
-                    <option>All Genres</option>
-                    <option>Action</option>
-                    <option>Sci-Fi</option>
-                </select>
+            <div class="ml-2 flex gap-2">
+                <div class="relative">
+                    <select id="filter-genre" onchange="applyFilters()" class="px-4 py-2 bg-white dark:bg-black border border-gray-200 dark:border-[#262626] rounded-xl text-sm font-semibold text-gray-700 dark:text-white outline-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors cursor-pointer appearance-none pr-10">
+                        <option value="All">All Genres</option>
+                        <?php foreach($all_genres as $g): ?>
+                            <option value="<?php echo htmlspecialchars(strtolower($g)); ?>"><?php echo htmlspecialchars($g); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <svg class="w-4 h-4 pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
 
-                <select class="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 outline-none hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer appearance-none pr-8 relative">
-                    <option>All Languages</option>
-                    <option>English</option>
-                    <option>Hindi</option>
-                </select>
+                <div class="relative">
+                    <select id="filter-language" onchange="applyFilters()" class="px-4 py-2 bg-white dark:bg-black border border-gray-200 dark:border-[#262626] rounded-xl text-sm font-semibold text-gray-700 dark:text-white outline-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors cursor-pointer appearance-none pr-10">
+                        <option value="All">All Languages</option>
+                        <?php foreach($all_languages as $l): ?>
+                            <option value="<?php echo htmlspecialchars(strtolower($l)); ?>"><?php echo htmlspecialchars($l); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <svg class="w-4 h-4 pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
             </div>
         </div>
     </div>
 
-    <main class="flex-1 px-8 py-10 space-y-16">
-        <section>
+    <!-- Main Content Area -->
+    <main class="flex-1 w-full max-w-7xl mx-auto px-8 py-6 space-y-12">
+
+        <!-- NOW SHOWING CAROUSEL -->
+        <section id="section-now-showing">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">Now Showing in <?php echo htmlspecialchars($selected_city); ?></h2>
-                <div class="flex gap-2">
-                    <button onclick="scrollCarousel('now-showing-list', 'left')" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-600 dark:text-gray-400 transition-colors">
-                        <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                <div>
+                    <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white">Now Showing <span class="text-[#F5C518]">in <?php echo htmlspecialchars($selected_city); ?></span></h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Currently playing near you</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="ns-prev" class="carousel-arrow left" style="position:relative;transform:none;left:auto;right:auto;">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
                     </button>
-                    <button onclick="scrollCarousel('now-showing-list', 'right')" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-600 dark:text-gray-400 transition-colors">
-                        <i data-lucide="chevron-right" class="w-6 h-6"></i>
+                    <button id="ns-next" class="carousel-arrow right" style="position:relative;transform:none;left:auto;right:auto;">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
                     </button>
                 </div>
             </div>
-            
-            <div id="now-showing-list" class="flex flex-row flex-nowrap w-full gap-6 overflow-x-auto hide-scrollbar scroll-smooth pb-4">
-                <?php if (!empty($now_showing)): ?>
-                    <?php foreach($now_showing as $movie): ?>
-                        <?php 
-                            $poster = !empty($movie['poster_image']) ? 'admin/'.htmlspecialchars($movie['poster_image']) : 'https://via.placeholder.com/400x600?text=No+Poster'; 
-                        ?>
-                        <a href="movie_details.php?id=<?php echo $movie['id']; ?>" class="shrink-0 flex-none w-[220px] md:w-[260px] group cursor-pointer block">
-                            <div class="rounded-xl overflow-hidden mb-3 h-[320px] md:h-[380px] bg-gray-200 dark:bg-gray-800 transition-colors duration-300 relative shadow-md">
-                                <img src="<?php echo $poster; ?>" alt="<?php echo htmlspecialchars($movie['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 absolute inset-0">
+
+            <?php if (!empty($now_showing)): ?>
+                <div class="relative overflow-hidden">
+                    <div id="ns-track" class="carousel-track gap-5">
+                        <?php foreach($now_showing as $idx => $movie): ?>
+                            <?php $poster = !empty($movie['poster_image']) ? 'admin/'.htmlspecialchars($movie['poster_image']) : 'https://via.placeholder.com/400x600/1a1a1a/ffffff?text=No+Poster'; ?>
+                            <div class="carousel-card movie-card w-[165px] md:w-[185px]"
+                                 data-genre="<?php echo htmlspecialchars(strtolower($movie['genre'] ?? '')); ?>"
+                                 data-language="<?php echo htmlspecialchars(strtolower($movie['language'] ?? '')); ?>"
+                                 data-status="<?php echo htmlspecialchars($movie['status']); ?>">
+                                <a href="movie_details.php?id=<?php echo $movie['id']; ?>" class="block">
+                                    <div class="movie-poster-card h-[240px] md:h-[265px] mb-3 shadow-lg">
+                                        <img src="<?php echo $poster; ?>" alt="<?php echo htmlspecialchars($movie['title']); ?>" loading="lazy">
+                                        <?php if (!empty($movie['is_rerelease'])): ?>
+                                            <span class="badge-rerelease">Re-Release</span>
+                                        <?php endif; ?>
+                                        <div class="card-overlay">
+                                            <!-- Hover gradient only, text/buttons removed as requested -->
+                                        </div>
+                                    </div>
+                                    <h3 class="font-bold text-[13px] text-gray-900 dark:text-white leading-snug mb-0.5 truncate"><?php echo htmlspecialchars($movie['title']); ?></h3>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate"><?php echo htmlspecialchars($movie['genre'] ?? ''); ?></p>
+                                </a>
                             </div>
-                            <h3 class="font-bold text-[16px] text-gray-900 dark:text-white leading-tight mb-1 truncate transition-colors duration-300">
-                                <?php echo htmlspecialchars($movie['title']); ?>
-                            </h3>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400 transition-colors duration-300">
-                                <?php echo htmlspecialchars($movie['genre']); ?>
-                            </p>
-                        </a>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p class="text-gray-500 dark:text-gray-400 w-full">No movies currently showing in <?php echo htmlspecialchars($selected_city); ?>.</p>
-                <?php endif; ?>
-            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <!-- Poster dots placed at the bottom -->
+                <div id="ns-dots" class="flex flex-wrap items-center justify-center gap-2 mt-6"></div>
+            <?php else: ?>
+                <div class="flex flex-col items-center justify-center py-16 text-center">
+                    <svg class="w-14 h-14 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-3.75.125A1.125 1.125 0 013 18.375V5.625m0 0a1.125 1.125 0 011.125-1.125h3.75M3 5.625V4.5M21 5.625a1.125 1.125 0 00-1.125-1.125h-3.75M21 5.625V4.5m0 1.125v12.75A1.125 1.125 0 0119.875 19.5M15 4.5h1.125"/></svg>
+                    <p class="text-gray-500 dark:text-gray-400 font-medium">No movies showing in <?php echo htmlspecialchars($selected_city); ?></p>
+                    <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Try selecting a different city</p>
+                </div>
+            <?php endif; ?>
         </section>
 
-        <section>
+        <!-- COMING SOON CAROUSEL -->
+        <section id="section-coming-soon">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">Coming Soon</h2>
-                <div class="flex gap-2">
-                    <button onclick="scrollCarousel('coming-soon-list', 'left')" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-600 dark:text-gray-400 transition-colors">
-                        <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                <div>
+                    <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white">Coming <span class="text-[#F5C518]">Soon</span></h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Upcoming releases to look forward to</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="cs-prev" class="carousel-arrow left" style="position:relative;transform:none;left:auto;right:auto;">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
                     </button>
-                    <button onclick="scrollCarousel('coming-soon-list', 'right')" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-600 dark:text-gray-400 transition-colors">
-                        <i data-lucide="chevron-right" class="w-6 h-6"></i>
+                    <button id="cs-next" class="carousel-arrow right" style="position:relative;transform:none;left:auto;right:auto;">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
                     </button>
                 </div>
             </div>
-            
-            <div id="coming-soon-list" class="flex flex-row flex-nowrap w-full gap-6 overflow-x-auto hide-scrollbar scroll-smooth pb-4">
-                <?php if (!empty($coming_soon)): ?>
-                    <?php foreach($coming_soon as $movie): ?>
-                        <?php 
-                            $poster = !empty($movie['poster_image']) ? 'admin/'.htmlspecialchars($movie['poster_image']) : 'https://via.placeholder.com/400x600?text=No+Poster'; 
-                        ?>
-                        <a href="movie_details.php?id=<?php echo $movie['id']; ?>" class="shrink-0 flex-none w-[220px] md:w-[260px] group cursor-pointer block">
-                            <div class="rounded-xl overflow-hidden mb-3 h-[320px] md:h-[380px] bg-gray-200 dark:bg-gray-800 transition-colors duration-300 relative shadow-md">
-                                <img src="<?php echo $poster; ?>" alt="<?php echo htmlspecialchars($movie['title']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 absolute inset-0">
+
+            <?php if (!empty($coming_soon)): ?>
+                <div class="relative overflow-hidden">
+                    <div id="cs-track" class="carousel-track gap-5">
+                        <?php foreach($coming_soon as $idx => $movie): ?>
+                            <?php $poster = !empty($movie['poster_image']) ? 'admin/'.htmlspecialchars($movie['poster_image']) : 'https://via.placeholder.com/400x600/1a1a1a/ffffff?text=No+Poster'; ?>
+                            <div class="carousel-card movie-card w-[165px] md:w-[185px]"
+                                 data-genre="<?php echo htmlspecialchars(strtolower($movie['genre'] ?? '')); ?>"
+                                 data-language="<?php echo htmlspecialchars(strtolower($movie['language'] ?? '')); ?>"
+                                 data-status="<?php echo htmlspecialchars($movie['status']); ?>">
+                                <a href="movie_details.php?id=<?php echo $movie['id']; ?>" class="block">
+                                    <div class="movie-poster-card h-[240px] md:h-[265px] mb-3 shadow-lg">
+                                        <img src="<?php echo $poster; ?>" alt="<?php echo htmlspecialchars($movie['title']); ?>" loading="lazy">
+                                        <?php if (!empty($movie['is_rerelease'])): ?>
+                                            <span class="badge-rerelease">Re-Release</span>
+                                        <?php endif; ?>
+                                        <div class="card-overlay">
+                                            <span class="inline-block bg-white/20 text-white text-[11px] font-bold px-3 py-1 rounded-full mb-1 w-fit backdrop-blur-sm">Coming Soon</span>
+                                            <p class="text-white text-xs font-semibold truncate"><?php echo htmlspecialchars($movie['language'] ?? ''); ?></p>
+                                        </div>
+                                    </div>
+                                    <h3 class="font-bold text-[13px] text-gray-900 dark:text-white leading-snug mb-0.5 truncate"><?php echo htmlspecialchars($movie['title']); ?></h3>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate"><?php echo htmlspecialchars($movie['genre'] ?? ''); ?></p>
+                                </a>
                             </div>
-                            <h3 class="font-bold text-[16px] text-gray-900 dark:text-white leading-tight mb-1 truncate transition-colors duration-300">
-                                <?php echo htmlspecialchars($movie['title']); ?>
-                            </h3>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400 transition-colors duration-300">
-                                <?php echo htmlspecialchars($movie['genre']); ?>
-                            </p>
-                        </a>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p class="text-gray-500 dark:text-gray-400 w-full">No upcoming movies at this time.</p>
-                <?php endif; ?>
-            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <!-- Poster dots placed at the bottom -->
+                <div id="cs-dots" class="flex flex-wrap items-center justify-center gap-2 mt-6"></div>
+            <?php else: ?>
+                <div class="flex flex-col items-center justify-center py-16 text-center">
+                    <svg class="w-14 h-14 text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5"/></svg>
+                    <p class="text-gray-500 dark:text-gray-400 font-medium">No upcoming movies right now</p>
+                    <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Check back soon for new releases</p>
+                </div>
+            <?php endif; ?>
         </section>
+
     </main>
 
     <div id="signin-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 backdrop-blur-sm transition-opacity">
@@ -355,18 +577,206 @@ if (empty($now_showing) && empty($coming_soon)) {
     </div>
 
     <script>
-        function scrollCarousel(containerId, direction) {
-            const container = document.getElementById(containerId);
-            const scrollAmount = 300;
-            if (container) {
-                container.scrollBy({
-                    left: direction === 'left' ? -scrollAmount : scrollAmount,
-                    behavior: 'smooth'
+        /* ========================================================
+           HERO BANNER CAROUSEL
+           ======================================================== */
+        (function() {
+            const slides   = Array.from(document.querySelectorAll('.hero-slide'));
+            const track    = document.getElementById('hero-track');
+            const prevBtn  = document.getElementById('hero-prev');
+            const nextBtn  = document.getElementById('hero-next');
+            const dotsWrap = document.getElementById('hero-dots');
+            const progBar  = document.getElementById('hero-progress');
+
+            if (!slides.length) return;
+
+            const INTERVAL = 6000;
+            let current = 0;
+            let timer;
+
+            slides.forEach((_, i) => {
+                const dot = document.createElement('button');
+                dot.style.cssText = [
+                    'display:inline-block',
+                    'width:' + (i === 0 ? '24px' : '8px'),
+                    'height:8px',
+                    'border-radius:9999px',
+                    'border:none',
+                    'cursor:pointer',
+                    'transition:width 0.3s,background 0.3s',
+                    'background:' + (i === 0 ? '#F5C518' : 'rgba(255,255,255,0.4)')
+                ].join(';');
+                dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+                dot.addEventListener('click', () => { goTo(i); resetAuto(); });
+                if (dotsWrap) dotsWrap.appendChild(dot);
+            });
+
+            function goTo(index) {
+                current = ((index % slides.length) + slides.length) % slides.length;
+                
+                if (track) {
+                    track.style.transform = `translateX(-${current * 100}%)`;
+                }
+
+                if (dotsWrap) {
+                    Array.from(dotsWrap.children).forEach((d, i) => {
+                        d.style.width      = i === current ? '24px' : '8px';
+                        d.style.background = i === current ? '#F5C518' : 'rgba(255,255,255,0.4)';
+                    });
+                }
+
+                if (progBar) {
+                    progBar.style.transition = 'none';
+                    progBar.style.width = '0%';
+                    void progBar.offsetWidth; 
+                    progBar.style.transition = 'width ' + INTERVAL + 'ms linear';
+                    progBar.style.width = '100%';
+                }
+            }
+
+            function startAuto() {
+                clearInterval(timer);
+                if (slides.length > 1) {
+                    timer = setInterval(() => goTo(current + 1), INTERVAL);
+                }
+            }
+            function resetAuto() {
+                clearInterval(timer);
+                startAuto();
+            }
+
+            if (prevBtn) prevBtn.addEventListener('click', () => { goTo(current - 1); resetAuto(); });
+            if (nextBtn) nextBtn.addEventListener('click', () => { goTo(current + 1); resetAuto(); });
+
+            const heroEl = document.getElementById('hero-carousel');
+            if (heroEl) {
+                heroEl.addEventListener('mouseenter', () => clearInterval(timer));
+                heroEl.addEventListener('mouseleave', () => startAuto());
+            }
+
+            goTo(0);
+            startAuto();
+        })();
+
+
+        /* ========================================================
+           CAROUSEL ENGINE (For Now Showing & Coming Soon sections)
+           ======================================================== */
+        function initCarousel(trackId, prevId, nextId, dotsId) {
+            const track   = document.getElementById(trackId);
+            const prevBtn = document.getElementById(prevId);
+            const nextBtn = document.getElementById(nextId);
+            const dotsWrap = document.getElementById(dotsId);
+            if (!track) return null;
+
+            const cards = Array.from(track.querySelectorAll('.carousel-card'));
+            if (!cards.length) return null;
+
+            const GAP = 20; 
+            let currentIndex = 0;
+            let visibleCards = [];
+
+            function getCardWidth() {
+                const c = visibleCards[0] || cards[0];
+                return c ? c.offsetWidth + GAP : 200;
+            }
+
+            function getVisibleCount() {
+                const cw = getCardWidth();
+                return Math.max(1, Math.floor(track.parentElement.offsetWidth / cw));
+            }
+
+            function buildDots() {
+                if (!dotsWrap) return;
+                dotsWrap.innerHTML = '';
+                const vc = getVisibleCount();
+                const maxIndex = Math.max(0, visibleCards.length - vc);
+                const dotCount = maxIndex + 1;
+                
+                if (dotCount <= 1) return;
+
+                for (let i = 0; i < dotCount; i++) {
+                    const dot = document.createElement('button');
+                    dot.className = 'carousel-dot' + (i === currentIndex ? ' active' : '');
+                    dot.setAttribute('aria-label', 'Slide ' + (i+1));
+                    dot.addEventListener('click', () => { goTo(i); resetTimer(); });
+                    dotsWrap.appendChild(dot);
+                }
+            }
+
+            function updateDots() {
+                if (!dotsWrap) return;
+                Array.from(dotsWrap.children).forEach((dot, i) => {
+                    dot.classList.toggle('active', i === currentIndex);
                 });
             }
+
+            function goTo(index) {
+                if (!visibleCards.length) return;
+                const vc = getVisibleCount();
+                const maxIndex = Math.max(0, visibleCards.length - vc);
+                
+                currentIndex = Math.max(0, Math.min(index, maxIndex));
+
+                let offset = 0;
+                if (visibleCards[currentIndex]) {
+                    offset = visibleCards[currentIndex].offsetLeft;
+                }
+                track.style.transform = 'translateX(-' + offset + 'px)';
+                updateDots();
+            }
+
+            function next() {
+                const vc = getVisibleCount();
+                const maxIndex = Math.max(0, visibleCards.length - vc);
+                if (currentIndex >= maxIndex) {
+                    goTo(0); // loop back to first poster
+                } else {
+                    goTo(currentIndex + 1); // move by exactly one poster
+                }
+            }
+            
+            function prev() {
+                const vc = getVisibleCount();
+                const maxIndex = Math.max(0, visibleCards.length - vc);
+                if (currentIndex <= 0) {
+                    goTo(maxIndex); // loop to last possible poster view
+                } else {
+                    goTo(currentIndex - 1); // move back exactly one poster
+                }
+            }
+
+            let timer;
+            function startTimer() {
+                timer = setInterval(next, 5000);
+            }
+            function resetTimer() {
+                clearInterval(timer);
+                startTimer();
+            }
+
+            if (prevBtn) prevBtn.addEventListener('click', () => { prev(); resetTimer(); });
+            if (nextBtn) nextBtn.addEventListener('click', () => { next(); resetTimer(); });
+
+            function refresh() {
+                visibleCards = cards.filter(c => c.style.display !== 'none');
+                currentIndex = 0;
+                track.style.transform = 'translateX(0)';
+                buildDots();
+            }
+
+            track.parentElement.addEventListener('mouseenter', () => clearInterval(timer));
+            track.parentElement.addEventListener('mouseleave', () => startTimer());
+
+            setTimeout(refresh, 80);
+            window.addEventListener('resize', () => setTimeout(refresh, 100));
+            startTimer();
+
+            return { refresh, goTo, next, prev };
         }
-        
-        lucide.createIcons();
+
+        const nsCarousel = initCarousel('ns-track', 'ns-prev', 'ns-next', 'ns-dots');
+        const csCarousel = initCarousel('cs-track', 'cs-prev', 'cs-next', 'cs-dots');
 
         const openSigninBtn = document.getElementById('open-signin-btn');
         const signinModal = document.getElementById('signin-modal');
@@ -446,6 +856,73 @@ if (empty($now_showing) && empty($coming_soon)) {
                     localStorage.setItem('color-theme', 'dark');
                 }
             });
+        }
+        
+        // --- Filtering Logic ---
+        let currentStatusFilter = 'All';
+
+        function setFilterStatus(status) {
+            currentStatusFilter = status;
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = "filter-btn px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 dark:text-white bg-white dark:bg-black border border-gray-200 dark:border-[#262626] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors";
+            });
+            
+            let activeBtnId = 'btn-filter-all';
+            if (status === 'Now Showing') activeBtnId = 'btn-filter-ns';
+            if (status === 'Coming Soon') activeBtnId = 'btn-filter-cs';
+            
+            const activeBtn = document.getElementById(activeBtnId);
+            if (activeBtn) {
+                activeBtn.className = "filter-btn px-4 py-2 rounded-xl text-sm font-bold bg-[#F5C518] text-black border border-transparent transition-colors";
+            }
+            
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const genreSelect = document.getElementById('filter-genre');
+            const langSelect  = document.getElementById('filter-language');
+            
+            const selectedGenre = genreSelect ? genreSelect.value.toLowerCase() : 'all';
+            const selectedLang  = langSelect  ? langSelect.value.toLowerCase()  : 'all';
+            
+            const safeCurrentStatus = currentStatusFilter.trim().toLowerCase();
+            
+            const cards = document.querySelectorAll('.movie-card');
+            let visibleNsCount = 0, visibleCsCount = 0;
+            
+            cards.forEach(card => {
+                const cardStatus = (card.getAttribute('data-status') || '').trim().toLowerCase();
+                const cardGenre  = (card.getAttribute('data-genre')  || '').toLowerCase();
+                const cardLang   = (card.getAttribute('data-language')|| '').toLowerCase();
+                
+                let show = true;
+                if (currentStatusFilter !== 'All' && cardStatus !== safeCurrentStatus) show = false;
+                if (selectedGenre !== 'all' && !cardGenre.includes(selectedGenre)) show = false;
+                if (selectedLang  !== 'all' && !cardLang.includes(selectedLang))   show = false;
+                
+                card.style.display = show ? '' : 'none';
+                
+                if (show) {
+                    if (cardStatus === 'now showing') visibleNsCount++;
+                    if (cardStatus === 'coming soon')  visibleCsCount++;
+                }
+            });
+            
+            const nsSection = document.getElementById('section-now-showing');
+            const csSection = document.getElementById('section-coming-soon');
+            if (nsSection) nsSection.style.display = currentStatusFilter === 'Coming Soon' ? 'none' : '';
+            if (csSection) csSection.style.display  = currentStatusFilter === 'Now Showing' ? 'none' : '';
+            
+            setTimeout(() => {
+                if (nsCarousel) nsCarousel.refresh();
+                if (csCarousel) csCarousel.refresh();
+            }, 50);
+        }
+
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
         }
     </script>
 </body>

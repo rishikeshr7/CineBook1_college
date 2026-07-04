@@ -31,7 +31,7 @@ if (!$showtime) {
 // 2. Fetch Booked Seats Dynamically (With Safety Net)
 $booked_seats = [];
 try {
-    $b_sql = "SELECT seat_numbers FROM bookings WHERE showtime_id = ?";
+    $b_sql = "SELECT seat_numbers FROM bookings WHERE showtime_id = ? AND status = 'Confirmed'";
     $b_stmt = $conn->prepare($b_sql);
     if ($b_stmt) {
         $b_stmt->bind_param("i", $showtime_id);
@@ -229,6 +229,7 @@ $total_columns = 16;
                                 ?>
                                     <button 
                                         type="button" 
+                                        id="seat-<?php echo $seat_id; ?>"
                                         class="seat-btn w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 <?php echo $btn_class; ?>"
                                         <?php if(!$is_booked) echo "onclick=\"toggleSeat(this, '$seat_id', $seat_price)\""; ?>
                                         title="<?php echo $seat_id . ' - ₹' . $seat_price; ?>"
@@ -328,6 +329,9 @@ $total_columns = 16;
         </div>
     </div>
 
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-24 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
     <script>
         // Render Icons
         if (typeof lucide !== 'undefined') {
@@ -337,6 +341,39 @@ $total_columns = 16;
         const MAX_SEATS = <?php echo $max_seats; ?>;
         let selectedSeats = [];
         let totalPrice = 0;
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            // Design matching the UI
+            toast.className = 'bg-white dark:bg-[#181818] border border-gray-200 dark:border-borderMain text-gray-900 dark:text-white px-5 py-4 rounded-xl shadow-xl flex items-center gap-3 transform transition-all duration-300 translate-x-[120%] opacity-0 pointer-events-auto';
+            
+            toast.innerHTML = `
+                <div class="bg-red-50 dark:bg-red-900/20 text-red-500 p-1.5 rounded-lg border border-red-100 dark:border-red-900/30">
+                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                </div>
+                <p class="text-sm font-bold pr-2">${message}</p>
+            `;
+            
+            container.appendChild(toast);
+            if (typeof lucide !== 'undefined') lucide.createIcons({root: toast});
+            
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-x-[120%]', 'opacity-0');
+            }, 10);
+            
+            // Animate out and remove after 3s
+            setTimeout(() => {
+                toast.classList.add('translate-x-[120%]', 'opacity-0');
+                setTimeout(() => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
 
         function toggleSeat(btn, seatId, price) {
             const index = selectedSeats.indexOf(seatId);
@@ -349,12 +386,32 @@ $total_columns = 16;
             } else {
                 // Select seat 
                 if (selectedSeats.length >= MAX_SEATS) {
-                    alert(`You can only select ${MAX_SEATS} seat(s) based on your previous selection.`);
+                    showToast(`You can only select ${MAX_SEATS} seat(s) based on your previous selection.`);
                     return;
                 }
-                selectedSeats.push(seatId);
-                totalPrice += price;
-                btn.classList.add('selected');
+                
+                const row = seatId.charAt(0);
+                const startCol = parseInt(seatId.slice(1));
+                const seatsNeeded = MAX_SEATS - selectedSeats.length;
+
+                for (let i = 0; i < seatsNeeded; i++) {
+                    const currentCol = startCol + i;
+                    const currentSeatId = row + currentCol;
+                    const currentBtn = document.getElementById('seat-' + currentSeatId);
+                    
+                    // Stop if seat doesn't exist (end of row) or is booked
+                    if (!currentBtn || currentBtn.disabled || currentBtn.classList.contains('booked')) {
+                        break;
+                    }
+                    
+                    if (!selectedSeats.includes(currentSeatId)) {
+                        selectedSeats.push(currentSeatId);
+                        totalPrice += price; // Contiguous seats in a row share the same tier pricing
+                        currentBtn.classList.add('selected');
+                    }
+                    
+                    if (selectedSeats.length >= MAX_SEATS) break;
+                }
             }
 
             updateBottomBar();

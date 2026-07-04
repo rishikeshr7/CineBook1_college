@@ -175,6 +175,8 @@ $bookings_sql = "
         b.seat_numbers,
         b.total_amount,
         b.booking_date,
+        b.status AS booking_status,
+        b.refund_amount,
         s.show_date,
         s.show_time,
         s.theater_id AS cinema_name,
@@ -195,8 +197,21 @@ $bookings_stmt->bind_param("i", $user_id);
 $bookings_stmt->execute();
 $bookings_result = $bookings_stmt->get_result();
 $bookings = [];
+$upcoming_bookings = [];
+$past_bookings = [];
+$cancelled_bookings = [];
 while ($row = $bookings_result->fetch_assoc()) {
     $bookings[] = $row;
+    if ($row['booking_status'] === 'Cancelled') {
+        $cancelled_bookings[] = $row;
+    } else {
+        $show_datetime = $row['show_date'] . ' ' . $row['show_time'];
+        if (strtotime($show_datetime) > time()) {
+            $upcoming_bookings[] = $row;
+        } else {
+            $past_bookings[] = $row;
+        }
+    }
 }
 $bookings_stmt->close();
 
@@ -307,6 +322,37 @@ if (!empty($bookings)) {
                         </div>
                     </div>
                 </div>
+                
+                <!-- Cancellation Policy Sidebar Card -->
+                <div class="mt-6 bg-white dark:bg-[#121212] rounded-3xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="info" class="w-5 h-5 text-[#F5C518]"></i>
+                        <h3 class="text-sm font-bold text-gray-900 dark:text-white">Cancellation Policy</h3>
+                    </div>
+                    
+                    <div class="bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30 rounded-xl p-4">
+                        <div class="flex items-center gap-2 text-green-600 dark:text-green-400 font-bold text-sm mb-1">
+                            <i data-lucide="check-circle-2" class="w-4 h-4"></i> 100% Refund
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Cancelled more than 48 hours before showtime</p>
+                    </div>
+                    
+                    <div class="bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 rounded-xl p-4">
+                        <div class="flex items-center gap-2 text-orange-600 dark:text-orange-400 font-bold text-sm mb-1">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i> 50% Refund
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Cancelled between 24-48 hours before showtime</p>
+                    </div>
+                    
+                    <div class="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-xl p-4">
+                        <div class="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold text-sm mb-1">
+                            <i data-lucide="ban" class="w-4 h-4"></i> No Refund
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Cancelled within 24 hours of showtime</p>
+                    </div>
+                    
+                    <p class="text-[11px] text-gray-500 dark:text-gray-500 mt-2">Refunds credited in 5-7 business days</p>
+                </div>
             </aside>
 
             <!-- Right Panel (Bookings List) -->
@@ -314,13 +360,197 @@ if (!empty($bookings)) {
                 <h1 class="text-[2rem] font-black tracking-tight text-gray-900 dark:text-white mb-8">My Bookings</h1>
                 
                 <div class="space-y-6">
-                    <?php if (!empty($bookings)): ?>
-                        <?php foreach($bookings as $booking): ?>
-                            <!-- Booking Card -->
-                            <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col md:flex-row gap-6 shadow-sm hover:shadow-md transition-shadow duration-300 relative">
+                    <?php if (empty($upcoming_bookings) && empty($past_bookings) && empty($cancelled_bookings)): ?>
+                        <!-- Empty State -->
+                        <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-16 text-center shadow-sm">
+                            <div class="w-16 h-16 bg-gray-100 dark:bg-[#1E1E1E] rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="ticket" class="w-8 h-8 text-gray-400 dark:text-gray-500"></i>
+                            </div>
+                            <h3 class="text-lg font-bold mb-1">No bookings found</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">You haven't booked any movies yet.</p>
+                            <a href="index.php" class="inline-block mt-6 px-6 py-2.5 bg-[#F5C518] text-black font-bold rounded-xl hover:bg-yellow-500 transition-colors text-sm shadow-sm">
+                                Browse Movies
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <?php if (!empty($upcoming_bookings)): ?>
+                            <div class="flex items-center gap-3 mb-2">
+                                <i data-lucide="clock" class="w-5 h-5 text-gray-400"></i>
+                                <h2 class="text-xl font-bold text-gray-900 dark:text-white">Current & Upcoming Bookings</h2>
+                            </div>
+                            <?php foreach($upcoming_bookings as $booking): ?>
+                                <!-- Active Booking Card -->
+                                <?php 
+                                    $show_datetime = $booking['show_date'] . ' ' . $booking['show_time'];
+                                    $diff_seconds = strtotime($show_datetime) - time();
+                                    $hours_remaining = $diff_seconds / 3600;
+                                    
+                                    $refund_msg = "No refund if cancelled now";
+                                    $refund_class = "text-red-500 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900/30";
+                                    if ($hours_remaining >= 48) {
+                                        $refund_msg = "100% refund if cancelled now";
+                                        $refund_class = "text-green-600 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900/30";
+                                    } else if ($hours_remaining >= 24) {
+                                        $refund_msg = "50% refund if cancelled now";
+                                        $refund_class = "text-orange-600 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-900/30";
+                                    }
+                                ?>
+                                <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col md:flex-row gap-6 shadow-sm hover:shadow-md transition-shadow duration-300 relative">
+                                    <div class="w-full md:w-[150px] h-[225px] shrink-0 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-inner">
+                                        <?php 
+                                        $poster_src = htmlspecialchars($booking['poster_image']);
+                                        if (strpos($poster_src, 'http') !== 0) {
+                                            $poster_src = 'admin/' . $poster_src;
+                                        }
+                                        ?>
+                                        <img src="<?php echo $poster_src; ?>" alt="Poster" class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="flex-1 flex flex-col justify-between">
+                                        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                                            <div>
+                                                <h3 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"><?php echo htmlspecialchars($booking['movie_title']); ?></h3>
+                                                <div class="flex flex-wrap gap-2 mt-2">
+                                                    <span class="px-3 py-1 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 text-xs font-semibold rounded-full border border-green-100 dark:border-green-900/50">Confirmed</span>
+                                                    <?php if (!empty($booking['show_format'])): ?>
+                                                        <span class="px-3 py-1 bg-gray-100 dark:bg-[#1e1e1e] text-gray-600 dark:text-gray-300 text-xs font-semibold rounded-full border border-gray-200 dark:border-gray-800"><?php echo htmlspecialchars($booking['show_format']); ?></span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                            <div class="sm:text-right shrink-0">
+                                                <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Booking ID</p>
+                                                <p class="text-sm font-bold text-gray-900 dark:text-white mt-0.5">BK<?php echo str_pad($booking['booking_id'], 3, '0', STR_PAD_LEFT); ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-y-3.5 gap-x-6 text-sm text-gray-600 dark:text-gray-300 mb-4 pt-2">
+                                            <div class="flex items-center gap-2.5">
+                                                <i data-lucide="calendar" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
+                                                <span class="font-medium"><?php echo date('Y-m-d', strtotime($booking['show_date'])); ?></span>
+                                            </div>
+                                            <div class="flex items-center gap-2.5">
+                                                <i data-lucide="clock" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
+                                                <span class="font-medium"><?php echo date('H:i', strtotime($booking['show_time'])); ?></span>
+                                            </div>
+                                            <div class="flex items-center gap-2.5 col-span-2 sm:col-span-1">
+                                                <i data-lucide="map-pin" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
+                                                <span class="font-medium truncate"><?php echo htmlspecialchars($booking['cinema_name']); ?></span>
+                                            </div>
+                                            <div class="flex items-center gap-2.5 col-span-2 sm:col-span-1">
+                                                <span class="text-gray-400 dark:text-gray-500 font-medium">Seats:</span>
+                                                <span class="font-bold text-gray-900 dark:text-white"><?php echo htmlspecialchars($booking['seat_numbers']); ?></span>
+                                            </div>
+                                        </div>
+                                        <?php if ($hours_remaining > 0): ?>
+                                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold self-start <?php echo $refund_class; ?>">
+                                            <i data-lucide="ban" class="w-3.5 h-3.5"></i> <?php echo $refund_msg; ?>
+                                        </div>
+                                        <?php endif; ?>
+                                        <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-end justify-between">
+                                            <div>
+                                                <p class="text-[11px] font-semibold uppercase text-gray-400 dark:text-gray-500 tracking-wider">Total Amount</p>
+                                                <p class="text-3xl font-extrabold text-[#F5C518] mt-0.5">₹<?php echo number_format($booking['total_amount'], 0); ?></p>
+                                            </div>
+                                            <div class="flex gap-3">
+                                                <button 
+                                                    onclick="openTicketModal(<?php echo $booking['booking_id']; ?>)"
+                                                    class="px-5 py-2 border border-gray-300 dark:border-gray-700 rounded-xl font-bold text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 text-sm">
+                                                    View Ticket
+                                                </button>
+                                                <?php if ($hours_remaining > 0): ?>
+                                                <button 
+                                                    onclick="cancelTicket(<?php echo $booking['booking_id']; ?>)"
+                                                    class="px-5 py-2 border border-red-200 dark:border-red-900/50 text-red-500 rounded-xl font-bold hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 text-sm">
+                                                    Cancel
+                                                </button>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+
+                        <?php if (!empty($past_bookings)): ?>
+                            <div class="mt-12 mb-2 flex items-center gap-3">
+                                <i data-lucide="history" class="w-5 h-5 text-gray-400"></i>
+                                <h2 class="text-xl font-bold text-gray-900 dark:text-white">Past Bookings</h2>
+                            </div>
+                            <?php foreach($past_bookings as $booking): ?>
+                                <!-- Past Booking Card -->
+                                <div class="bg-gray-50 dark:bg-[#121212]/50 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col md:flex-row gap-6 shadow-sm relative opacity-80">
+                                    <div class="w-full md:w-[150px] h-[225px] shrink-0 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-inner">
+                                        <?php 
+                                        $poster_src = htmlspecialchars($booking['poster_image']);
+                                        if (strpos($poster_src, 'http') !== 0) {
+                                            $poster_src = 'admin/' . $poster_src;
+                                        }
+                                        ?>
+                                        <img src="<?php echo $poster_src; ?>" alt="Poster" class="w-full h-full object-cover grayscale opacity-80">
+                                    </div>
+                                    <div class="flex-1 flex flex-col justify-between">
+                                        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                                            <div>
+                                                <h3 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white/80"><?php echo htmlspecialchars($booking['movie_title']); ?></h3>
+                                                <div class="flex flex-wrap gap-2 mt-2">
+                                                    <span class="px-3 py-1 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-semibold rounded-full">Past</span>
+                                                    <?php if (!empty($booking['show_format'])): ?>
+                                                        <span class="px-3 py-1 bg-gray-100 dark:bg-[#1e1e1e] text-gray-500 dark:text-gray-400 text-xs font-semibold rounded-full border border-gray-200 dark:border-gray-800"><?php echo htmlspecialchars($booking['show_format']); ?></span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                            <div class="sm:text-right shrink-0">
+                                                <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Booking ID</p>
+                                                <p class="text-sm font-bold text-gray-700 dark:text-gray-300 mt-0.5">BK<?php echo str_pad($booking['booking_id'], 3, '0', STR_PAD_LEFT); ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-y-3.5 gap-x-6 text-sm text-gray-500 dark:text-gray-400 mb-4 pt-2">
+                                            <div class="flex items-center gap-2.5">
+                                                <i data-lucide="calendar" class="w-4 h-4 opacity-70"></i>
+                                                <span class="font-medium"><?php echo date('Y-m-d', strtotime($booking['show_date'])); ?></span>
+                                            </div>
+                                            <div class="flex items-center gap-2.5">
+                                                <i data-lucide="clock" class="w-4 h-4 opacity-70"></i>
+                                                <span class="font-medium"><?php echo date('H:i', strtotime($booking['show_time'])); ?></span>
+                                            </div>
+                                            <div class="flex items-center gap-2.5 col-span-2 sm:col-span-1">
+                                                <i data-lucide="map-pin" class="w-4 h-4 opacity-70"></i>
+                                                <span class="font-medium truncate"><?php echo htmlspecialchars($booking['cinema_name']); ?></span>
+                                            </div>
+                                            <div class="flex items-center gap-2.5 col-span-2 sm:col-span-1">
+                                                <span class="font-medium">Seats:</span>
+                                                <span class="font-bold text-gray-700 dark:text-gray-300"><?php echo htmlspecialchars($booking['seat_numbers']); ?></span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 flex items-end justify-between">
+                                            <div>
+                                                <p class="text-[11px] font-semibold uppercase text-gray-400 dark:text-gray-500 tracking-wider">Total Amount</p>
+                                                <p class="text-3xl font-extrabold text-[#F5C518] mt-0.5 opacity-80">₹<?php echo number_format($booking['total_amount'], 0); ?></p>
+                                            </div>
+                                            <div class="flex gap-3">
+                                                <button 
+                                                    onclick="openTicketModal(<?php echo $booking['booking_id']; ?>)"
+                                                    class="px-5 py-2 border border-gray-300 dark:border-gray-700 rounded-xl font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 text-sm">
+                                                    View Ticket
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    <?php endif; ?>
+
+                    <?php if (!empty($cancelled_bookings)): ?>
+                        <div class="mt-12 flex items-center gap-3">
+                            <i data-lucide="ban" class="w-5 h-5 text-gray-400"></i>
+                            <h2 class="text-xl font-bold text-gray-600 dark:text-gray-400">Cancelled Bookings</h2>
+                        </div>
+                        
+                        <?php foreach($cancelled_bookings as $booking): ?>
+                            <!-- Cancelled Booking Card -->
+                            <div class="bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 flex flex-col md:flex-row gap-5 relative overflow-hidden">
                                 
-                                <!-- Poster Image -->
-                                <div class="w-full md:w-[150px] h-[225px] shrink-0 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-inner">
+                                <!-- Cancelled Overlay for Poster -->
+                                <div class="w-full md:w-[120px] h-[180px] shrink-0 rounded-xl overflow-hidden relative">
                                     <?php 
                                     $poster_src = htmlspecialchars($booking['poster_image']);
                                     if (strpos($poster_src, 'http') !== 0) {
@@ -332,73 +562,39 @@ if (!empty($bookings)) {
                                 
                                 <!-- Booking Details Container -->
                                 <div class="flex-1 flex flex-col justify-between">
-                                    
-                                    <!-- Header: Movie Title & Badges (Left) + Booking ID (Right) -->
-                                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                                    <div class="flex justify-between items-start">
                                         <div>
-                                            <h3 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"><?php echo htmlspecialchars($booking['movie_title']); ?></h3>
-                                            <div class="flex flex-wrap gap-2 mt-2">
-                                                <!-- Confirmed badge in green -->
-                                                <span class="px-3 py-1 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 text-xs font-semibold rounded-full border border-green-100 dark:border-green-900/50">Confirmed</span>
-                                                <!-- Movie format badge in grey -->
-                                                <?php if (!empty($booking['show_format'])): ?>
-                                                    <span class="px-3 py-1 bg-gray-100 dark:bg-[#1e1e1e] text-gray-600 dark:text-gray-300 text-xs font-semibold rounded-full border border-gray-200 dark:border-gray-800"><?php echo htmlspecialchars($booking['show_format']); ?></span>
-                                                <?php endif; ?>
-                                            </div>
+                                            <h3 class="text-xl font-bold text-gray-600 dark:text-gray-400"><?php echo htmlspecialchars($booking['movie_title']); ?></h3>
+                                            <span class="inline-block mt-1 px-2.5 py-1 bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400 text-[10px] font-bold rounded-full">Tickets Cancelled</span>
                                         </div>
-                                        <div class="sm:text-right shrink-0">
-                                            <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Booking ID</p>
-                                            <p class="text-sm font-bold text-gray-900 dark:text-white mt-0.5">BK<?php echo str_pad($booking['booking_id'], 3, '0', STR_PAD_LEFT); ?></p>
+                                        <div class="text-right">
+                                            <p class="text-[10px] text-gray-400 uppercase font-semibold">Booking ID</p>
+                                            <p class="text-xs font-bold text-gray-500">BK<?php echo str_pad($booking['booking_id'], 3, '0', STR_PAD_LEFT); ?></p>
                                         </div>
                                     </div>
                                     
-                                    <!-- Details Metadata 2x2 Grid -->
-                                    <div class="grid grid-cols-2 gap-y-3.5 gap-x-6 text-sm text-gray-600 dark:text-gray-300 mb-6 border-t border-gray-100 dark:border-gray-800/50 pt-4">
-                                        <div class="flex items-center gap-2.5">
-                                            <i data-lucide="calendar" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
-                                            <span class="font-medium"><?php echo date('Y-m-d', strtotime($booking['show_date'])); ?></span>
-                                        </div>
-                                        <div class="flex items-center gap-2.5">
-                                            <i data-lucide="clock" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
-                                            <span class="font-medium"><?php echo date('H:i', strtotime($booking['show_time'])); ?></span>
-                                        </div>
-                                        <div class="flex items-center gap-2.5 col-span-2 sm:col-span-1">
-                                            <i data-lucide="map-pin" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
-                                            <span class="font-medium truncate"><?php echo htmlspecialchars($booking['cinema_name']); ?></span>
-                                        </div>
-                                        <div class="flex items-center gap-2.5 col-span-2 sm:col-span-1">
-                                            <span class="text-gray-400 dark:text-gray-500 font-medium">Seats:</span>
-                                            <span class="font-bold text-gray-900 dark:text-white"><?php echo htmlspecialchars($booking['seat_numbers']); ?></span>
-                                        </div>
+                                    <div class="flex gap-8 text-xs text-gray-500 dark:text-gray-400 my-4">
+                                        <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> <?php echo date('Y-m-d', strtotime($booking['show_date'])); ?></div>
+                                        <div class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i> <?php echo htmlspecialchars($booking['cinema_name']); ?></div>
                                     </div>
                                     
-                                    <!-- Footer: Total Spent & View Ticket Action -->
-                                    <div class="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800 flex items-end justify-between">
+                                    <div class="border-t border-gray-100 dark:border-gray-800/50 pt-3 flex items-end gap-10 mt-auto">
                                         <div>
-                                            <p class="text-[11px] font-semibold uppercase text-gray-400 dark:text-gray-500 tracking-wider">Total Amount</p>
-                                            <p class="text-3xl font-extrabold text-[#F5C518] mt-0.5">₹<?php echo number_format($booking['total_amount'], 0); ?></p>
+                                            <p class="text-[10px] uppercase text-gray-400 font-semibold mb-0.5">Paid</p>
+                                            <p class="text-lg font-bold text-gray-400 dark:text-gray-600 line-through">₹<?php echo number_format($booking['total_amount'], 0); ?></p>
                                         </div>
-                                        <button 
-                                            onclick="openTicketModal(<?php echo $booking['booking_id']; ?>)"
-                                            class="px-6 py-2.5 border-2 border-gray-900 dark:border-white rounded-xl font-bold text-gray-900 dark:text-white hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all duration-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#F5C518]">
-                                            View Ticket
-                                        </button>
+                                        <div>
+                                            <p class="text-[10px] uppercase text-gray-400 font-semibold mb-0.5">Refund</p>
+                                            <?php if ($booking['refund_amount'] > 0): ?>
+                                                <p class="text-lg font-bold text-red-500">₹<?php echo number_format($booking['refund_amount'], 0); ?></p>
+                                            <?php else: ?>
+                                                <p class="text-lg font-bold text-red-500">No Refund</p>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
-                    <?php else: ?>
-                        <!-- Empty State -->
-                        <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-16 text-center shadow-sm">
-                            <div class="w-16 h-16 bg-gray-100 dark:bg-[#1E1E1E] rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i data-lucide="ticket" class="w-8 h-8 text-gray-400 dark:text-gray-500"></i>
-                            </div>
-                            <h3 class="text-lg font-bold mb-1">No bookings found</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">You haven't booked any movies yet. Explore our movies section to find and book your favorite cinema seats.</p>
-                            <a href="index.php" class="inline-block mt-6 px-6 py-2.5 bg-[#F5C518] text-black font-bold rounded-xl hover:bg-yellow-500 transition-colors text-sm shadow-sm">
-                                Browse Movies
-                            </a>
-                        </div>
                     <?php endif; ?>
                 </div>
             </section>
@@ -608,6 +804,32 @@ if (!empty($bookings)) {
                 closeTicketModal();
             }
         });
+
+        async function cancelTicket(bookingId) {
+            if (!confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('cancel_booking.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ booking_id: bookingId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Booking cancelled successfully! Refund Amount: ₹' + data.refund_amount);
+                    window.location.reload();
+                } else {
+                    alert('Failed to cancel booking: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while trying to cancel the booking.');
+            }
+        }
     </script>
 </body>
 </html>

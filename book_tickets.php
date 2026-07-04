@@ -73,6 +73,14 @@ $shows_result = $shows_stmt->get_result();
 
 $theaters = [];
 while($show = $shows_result->fetch_assoc()) {
+    $show_datetime = strtotime($selected_date . ' ' . $show['show_time']);
+    $current_datetime = time();
+    $minutes_diff = ($current_datetime - $show_datetime) / 60;
+    
+    if ($minutes_diff > 30) {
+        continue; // Skip this showtime if it started more than 30 mins ago
+    }
+
     $t_id = $show['theater_id'];
     $fmt = $show['format'];
     
