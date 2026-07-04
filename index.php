@@ -63,27 +63,14 @@ $all_languages = [
     'Tamil', 'Telugu', 'Urdu'
 ];
 
-// Build hero slides array guaranteeing the order: Now Showing -> Coming Soon
-$hero_movies = [];
-$hero_ids = [];
+/* ============================================================
+   HERO CAROUSEL SOURCE
+   Hero shows Now Showing (for the selected city) followed by
+   Coming Soon — same data + same poster logic as the rails
+   below, so hero always matches what's on the page.
+   ============================================================ */
+$hero_movies = array_merge($now_showing, $coming_soon);
 
-// Step A: Add city-specific Now Showing movies first
-foreach ($now_showing as $movie) {
-    if (!in_array($movie['id'], $hero_ids)) {
-        $hero_movies[] = $movie;
-        $hero_ids[] = $movie['id'];
-    }
-}
-
-// Step C: Finally, add Coming Soon movies to the end of the rotation
-foreach ($coming_soon as $movie) {
-    if (!in_array($movie['id'], $hero_ids)) {
-        $hero_movies[] = $movie;
-        $hero_ids[] = $movie['id'];
-    }
-}
-
-// Fallback dummy data when DB is entirely empty
 if (empty($hero_movies)) {
     $hero_movies = [
         [
@@ -152,7 +139,29 @@ function heroImageUrl($movie) {
         html.dark #theme-icon-moon       { display: none  !important; }
         html.dark #theme-icon-sun        { display: block !important; }
 
-        /* ---- Carousel ---- */
+        /* ---- Hero carousel: one banner visible at a time ----
+           Every slide is stacked exactly on top of the others
+           (position: absolute; inset: 0) and only moved via
+           transform: translateX(). Only ONE slide is ever at
+           translateX(0) — everything else sits off-screen to
+           the left or right. This is immune to width/flex math
+           bugs: there is no "row" that can show two banners
+           side by side, because slides are never laid out in
+           normal flow next to each other. */
+        #hero-track {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .hero-slide {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ---- Carousel (Now Showing / Coming Soon rails) ---- */
         .carousel-track {
             display: flex;
             transition: transform 0.45s cubic-bezier(0.4,0,0.2,1);
@@ -229,15 +238,21 @@ function heroImageUrl($movie) {
     <section id="hero-carousel" class="relative overflow-hidden bg-black" style="height: clamp(420px, 58vw, 600px);">
 
         <!-- Track -->
-        <div id="hero-track" class="flex w-full h-full transition-transform duration-700 ease-in-out" style="transform: translateX(0%);">
+        <div id="hero-track">
 
-        <!-- Slides -->
+        <!-- Slides: each one is stacked on top of the others.
+             Server-side we already place slide 0 at translateX(0)
+             and every other slide off-screen to the right, so the
+             layout is correct on first paint even before JS runs. -->
         <?php foreach ($hero_movies as $hi => $hm): ?>
         <?php $hBg = heroImageUrl($hm); ?>
-        <div class="hero-slide relative w-full h-full shrink-0" data-index="<?php echo $hi; ?>">
+        <div class="hero-slide" data-index="<?php echo $hi; ?>"
+             style="transform: translateX(<?php echo $hi === 0 ? '0' : '100'; ?>%);">
 
-            <!-- Blurred background -->
-            <div class="absolute inset-0" style="background:url('<?php echo $hBg; ?>') center/cover no-repeat; filter:blur(18px) brightness(0.3); transform:scale(1.08);"></div>
+            <!-- Solid black base (primary background color) -->
+            <div class="absolute inset-0 bg-black"></div>
+            <!-- Blurred poster, dimmed further and layered on top of the black base -->
+            <div class="absolute inset-0" style="background:url('<?php echo $hBg; ?>') center/cover no-repeat; filter:blur(18px) brightness(0.3); transform:scale(1.08); opacity:0.45;"></div>
             <!-- Dark overlay -->
             <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/20"></div>
 
@@ -267,7 +282,7 @@ function heroImageUrl($movie) {
                         </span>
                         <?php endif; ?>
                         <?php if (!empty($hm['duration'])): ?>
-                        <span class="text-gray-300"><?php echo htmlspecialchars($hm['duration']); ?></span>
+                        <span class="text-gray-300"><?php echo htmlspecialchars($hm['duration']); ?> • </span>
                         <?php endif; ?>
                         <?php if (!empty($hm['genre'])): ?>
                         <span class="text-[#F5C518] font-medium"><?php echo htmlspecialchars($hm['genre']); ?></span>
@@ -324,11 +339,11 @@ function heroImageUrl($movie) {
         </div> <!-- End hero track -->
 
         <!-- Left / Right arrows -->
-        <button id="hero-prev"
+        <button id="hero-prev" type="button"
                 class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/50 backdrop-blur border border-white/20 text-white flex items-center justify-center hover:bg-[#F5C518] hover:text-black transition-all shadow-xl">
             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <button id="hero-next"
+        <button id="hero-next" type="button"
                 class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/50 backdrop-blur border border-white/20 text-white flex items-center justify-center hover:bg-[#F5C518] hover:text-black transition-all shadow-xl">
             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
         </button>
@@ -577,46 +592,75 @@ function heroImageUrl($movie) {
     </div>
 
     <script>
+    (function () { // <-- everything below is now scoped to this function,
+                    //     so it can NEVER collide with a same-named
+                    //     variable declared in header.php or anywhere else.
+
         /* ========================================================
            HERO BANNER CAROUSEL
+           - Slides come from PHP $hero_movies (Now Showing for
+             the selected city).
+           - Track width = slideCount * 100%, each slide width
+             = 100% / slideCount, so translateX math never drifts.
+           - Wrapped in DOMContentLoaded so elements always exist
+             before we try to attach listeners (this is the most
+             common reason arrow clicks silently do nothing).
            ======================================================== */
-        (function() {
-            const slides   = Array.from(document.querySelectorAll('.hero-slide'));
+        document.addEventListener('DOMContentLoaded', function () {
             const track    = document.getElementById('hero-track');
+            const slides   = track ? Array.from(track.querySelectorAll('.hero-slide')) : [];
             const prevBtn  = document.getElementById('hero-prev');
             const nextBtn  = document.getElementById('hero-next');
             const dotsWrap = document.getElementById('hero-dots');
             const progBar  = document.getElementById('hero-progress');
 
-            if (!slides.length) return;
+            if (!track || slides.length === 0) return;
 
             const INTERVAL = 6000;
+            const total = slides.length;
             let current = 0;
             let timer;
 
-            slides.forEach((_, i) => {
-                const dot = document.createElement('button');
-                dot.style.cssText = [
-                    'display:inline-block',
-                    'width:' + (i === 0 ? '24px' : '8px'),
-                    'height:8px',
-                    'border-radius:9999px',
-                    'border:none',
-                    'cursor:pointer',
-                    'transition:width 0.3s,background 0.3s',
-                    'background:' + (i === 0 ? '#F5C518' : 'rgba(255,255,255,0.4)')
-                ].join(';');
-                dot.setAttribute('aria-label', 'Slide ' + (i + 1));
-                dot.addEventListener('click', () => { goTo(i); resetAuto(); });
-                if (dotsWrap) dotsWrap.appendChild(dot);
-            });
+            // Only one slide? Hide nav entirely instead of leaving dead buttons.
+            if (total <= 1) {
+                if (prevBtn)  prevBtn.style.display  = 'none';
+                if (nextBtn)  nextBtn.style.display  = 'none';
+                if (progBar)  progBar.style.display  = 'none';
+                if (dotsWrap) dotsWrap.style.display = 'none';
+                return;
+            }
 
-            function goTo(index) {
-                current = ((index % slides.length) + slides.length) % slides.length;
-                
-                if (track) {
-                    track.style.transform = `translateX(-${current * 100}%)`;
-                }
+            if (dotsWrap) {
+                slides.forEach((_, i) => {
+                    const dot = document.createElement('button');
+                    dot.type = 'button';
+                    dot.style.cssText = [
+                        'display:inline-block',
+                        'width:' + (i === 0 ? '24px' : '8px'),
+                        'height:8px',
+                        'border-radius:9999px',
+                        'border:none',
+                        'cursor:pointer',
+                        'transition:width 0.3s,background 0.3s',
+                        'background:' + (i === 0 ? '#F5C518' : 'rgba(255,255,255,0.4)')
+                    ].join(';');
+                    dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+                    dot.addEventListener('click', () => { goTo(i); resetAuto(); });
+                    dotsWrap.appendChild(dot);
+                });
+            }
+
+            // Position every slide relative to `current` using the
+            // SHORTEST wrap-around path, so slide 0 -> last slide
+            // animates as a single short slide left/right instead of
+            // sliding all the way across every slide in between.
+            function render() {
+                slides.forEach((slide, i) => {
+                    let diff = i - current;
+                    if (diff > total / 2) diff -= total;
+                    if (diff < -total / 2) diff += total;
+                    slide.style.transform = `translateX(${diff * 100}%)`;
+                });
 
                 if (dotsWrap) {
                     Array.from(dotsWrap.children).forEach((d, i) => {
@@ -628,35 +672,36 @@ function heroImageUrl($movie) {
                 if (progBar) {
                     progBar.style.transition = 'none';
                     progBar.style.width = '0%';
-                    void progBar.offsetWidth; 
+                    void progBar.offsetWidth;
                     progBar.style.transition = 'width ' + INTERVAL + 'ms linear';
                     progBar.style.width = '100%';
                 }
             }
 
+            function goTo(index) {
+                current = ((index % total) + total) % total;
+                render();
+            }
+
             function startAuto() {
                 clearInterval(timer);
-                if (slides.length > 1) {
-                    timer = setInterval(() => goTo(current + 1), INTERVAL);
-                }
+                timer = setInterval(() => goTo(current + 1), INTERVAL);
             }
             function resetAuto() {
                 clearInterval(timer);
                 startAuto();
             }
 
-            if (prevBtn) prevBtn.addEventListener('click', () => { goTo(current - 1); resetAuto(); });
-            if (nextBtn) nextBtn.addEventListener('click', () => { goTo(current + 1); resetAuto(); });
+            prevBtn.addEventListener('click', () => { goTo(current - 1); resetAuto(); });
+            nextBtn.addEventListener('click', () => { goTo(current + 1); resetAuto(); });
 
             const heroEl = document.getElementById('hero-carousel');
-            if (heroEl) {
-                heroEl.addEventListener('mouseenter', () => clearInterval(timer));
-                heroEl.addEventListener('mouseleave', () => startAuto());
-            }
+            heroEl.addEventListener('mouseenter', () => clearInterval(timer));
+            heroEl.addEventListener('mouseleave', () => startAuto());
 
-            goTo(0);
+            render();
             startAuto();
-        })();
+        });
 
 
         /* ========================================================
@@ -836,27 +881,9 @@ function heroImageUrl($movie) {
             }
         });
 
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        const htmlElement = document.documentElement;
-
-        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            htmlElement.classList.add('dark');
-        } else {
-            htmlElement.classList.remove('dark');
-        }
-
-        if (themeToggleBtn) {
-            themeToggleBtn.addEventListener('click', () => {
-                const isDark = htmlElement.classList.contains('dark');
-                if (isDark) {
-                    htmlElement.classList.remove('dark');
-                    localStorage.setItem('color-theme', 'light');
-                } else {
-                    htmlElement.classList.add('dark');
-                    localStorage.setItem('color-theme', 'dark');
-                }
-            });
-        }
+        // Theme toggle (#theme-toggle) is wired up in header.php,
+        // since that's where the button itself lives — intentionally
+        // not duplicated here to avoid a double-toggle bug.
         
         // --- Filtering Logic ---
         let currentStatusFilter = 'All';
@@ -921,9 +948,20 @@ function heroImageUrl($movie) {
             }, 50);
         }
 
+        // Exposed on window because the filter buttons/selects use
+        // inline onclick="setFilterStatus(...)" / onchange="applyFilters()"
+        // in the HTML — those inline handlers can only see GLOBAL
+        // functions, and everything in this script is otherwise
+        // scoped inside the IIFE. This is the one intentional
+        // exception, added on purpose (not a leftover mistake).
+        window.setFilterStatus = setFilterStatus;
+        window.applyFilters = applyFilters;
+
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
+
+    })(); // end IIFE
     </script>
 </body>
 </html>
