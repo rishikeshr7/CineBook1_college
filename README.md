@@ -167,16 +167,6 @@ Based on the repository analysis, the following standard setups are **Not detect
 
 ---
 
-## 📸 Screenshots
-
-*(Replace placeholder URLs with actual screenshot paths when available)*
-
-| Homepage | Seat Selection | Admin Dashboard |
-|:---:|:---:|:---:|
-| ![Homepage](https://via.placeholder.com/400x250?text=Homepage+Screenshot) | ![Seats](https://via.placeholder.com/400x250?text=Seat+Selection) | ![Admin](https://via.placeholder.com/400x250?text=Admin+Dashboard) |
-
----
-
 ## 🐛 Troubleshooting
 
 - **Database Connection Failed**: Ensure MySQL is running in XAMPP and the database name in `dbconnect.php` exactly matches the one you created in phpMyAdmin.
