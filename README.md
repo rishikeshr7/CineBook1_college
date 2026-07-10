@@ -117,8 +117,8 @@ The project requires a MySQL database named `cinebook_db`.
 
 1. Open **phpMyAdmin** (usually `http://localhost/phpmyadmin`).
 2. Create a new database named `cinebook_db`.
-3. *(If a `.sql` dump file is provided in the future, import it here)*. Otherwise, the system expects the following normalized tables:
-   - `users`, `movies`, `showtimes`, `bookings`, `booking_food`, `movie_cast`, `movie_crew`, `movie_trailers`, `movie_reviews`.
+3. Select the newly created database and navigate to the **Import** tab.
+4. Choose the provided `cinebook_db.sql` file located in the root of the project and click **Go** to import all tables and data.
 
 ---
 
@@ -164,8 +164,6 @@ Based on the repository analysis, the following standard setups are **Not detect
 - **Testing Frameworks**: *Not detected*
 - **Linting / Formatting Tools**: *Not detected*
 - **Docker / CI/CD**: *Not detected*
-
----
 
 ## 🐛 Troubleshooting
 
