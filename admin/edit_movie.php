@@ -217,8 +217,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 ?>
 
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
+    <script>
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Movie - CineBook Admin</title>
@@ -389,7 +397,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
 
                         <!-- Additional Multi-language Trailers -->
-                        <div class="border border-gray-200 dark:border-borderMain rounded-xl p-5 space-y-4 mt-6 bg-[#0c0c0c]">
+                        <div class="border border-gray-200 dark:border-borderMain rounded-xl p-5 space-y-4 mt-6 bg-gray-50 dark:bg-[#0c0c0c]">
                             <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                 <i data-lucide="video" class="w-4 h-4 text-brand"></i> Additional Trailers (Multi-Language)
                             </h4>
@@ -507,6 +515,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <script>
         lucide.createIcons();
+
+        const themeToggle = document.getElementById('toggle-theme');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                }
+            });
+        }
 
         // Update main poster file name label
         function updateFileName(input) {
@@ -666,3 +687,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </script>
 </body>
 </html>
+

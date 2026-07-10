@@ -101,6 +101,7 @@ function heroImageUrl($movie) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CineBook - Home</title>
@@ -181,14 +182,19 @@ function heroImageUrl($movie) {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: rgba(245,197,24,0.92);
-            color: #000;
+            background: #ffffff;
+            color: #111111;
             cursor: pointer;
             border: none;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-            transition: background 0.2s, transform 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: transform 0.2s, background 0.2s, color 0.2s;
         }
-        .carousel-arrow:hover { background: #F5C518; transform: translateY(-50%) scale(1.1); }
+        html.dark .carousel-arrow {
+            background: #222222;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .carousel-arrow:hover { transform: translateY(-50%); }
         .carousel-arrow.left  { left:  -20px; }
         .carousel-arrow.right { right: -20px; }
         .carousel-dot {
@@ -263,9 +269,8 @@ function heroImageUrl($movie) {
                 <div class="flex-1 min-w-0 flex flex-col justify-center gap-3 py-8">
 
                     <!-- Status badge -->
-                    <div class="inline-flex items-center gap-2 self-start px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest
-                        <?php echo strtolower(trim($hm['status'])) === 'coming soon' ? 'bg-blue-500 text-white' : 'bg-[#F5C518] text-black'; ?>">
-                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg>
+                    <div class="inline-flex items-center gap-2 self-start bg-[#F5C518] text-black px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg>
                         <?php echo htmlspecialchars($hm['status']); ?>
                     </div>
 
@@ -407,7 +412,7 @@ function heroImageUrl($movie) {
         <section id="section-now-showing">
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white">Now Showing <span class="text-[#F5C518]">in <?php echo htmlspecialchars($selected_city); ?></span></h2>
+                    <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white">Now Showing in <?php echo htmlspecialchars($selected_city); ?></h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Currently playing near you</p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -461,7 +466,7 @@ function heroImageUrl($movie) {
         <section id="section-coming-soon">
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white">Coming <span class="text-[#F5C518]">Soon</span></h2>
+                    <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white">Coming Soon</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Upcoming releases to look forward to</p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -965,3 +970,4 @@ function heroImageUrl($movie) {
     </script>
 </body>
 </html>
+

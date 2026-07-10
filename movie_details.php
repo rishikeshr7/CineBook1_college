@@ -116,7 +116,7 @@ $crew_stmt->close();
 
 // Format Data
 $poster_src = !empty($movie['poster_image']) ? 'admin/' . htmlspecialchars($movie['poster_image']) : 'https://via.placeholder.com/400x600?text=No+Poster';
-$release_date = date('F j, Y', strtotime($movie['release_date']));
+$release_date = date('d-m-y', strtotime($movie['release_date']));
 $genres = explode(',', $movie['genre']);
 $formats = explode(',', $movie['formats']);
 ?>
@@ -124,6 +124,7 @@ $formats = explode(',', $movie['formats']);
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($movie['title']); ?> - CineBook</title>
@@ -374,7 +375,7 @@ $formats = explode(',', $movie['formats']);
                                 </div>
                             </div>
                             <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed"><?php echo nl2br(htmlspecialchars($review['review_text'])); ?></p>
-                            <p class="text-xs text-gray-400 mt-3"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></p>
+                            <p class="text-xs text-gray-400 mt-3"><?php echo date('d-m-y', strtotime($review['created_at'])); ?></p>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -439,3 +440,4 @@ $formats = explode(',', $movie['formats']);
     </script>
 </body>
 </html>
+

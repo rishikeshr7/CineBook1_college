@@ -53,9 +53,9 @@ if (isset($conn)) {
         
         if ($row = $result->fetch_assoc()) {
             $movie_name = $row['movie_name'];
-            $date = date('Y-m-d', strtotime($row['show_date'])); 
+            $date = date('d-m-y', strtotime($row['show_date'])); 
             $time = date('H:i', strtotime($row['show_time']));   
-            $theater = !empty($row['theater_name']) ? $row['theater_name'] : "Unknown Theater";
+            $theater = !empty($row['theater_name']) ? $row['theater_name'] : "INOX Megaplex";
         }
         $stmt->close();
     }
@@ -76,6 +76,7 @@ $currency = "₹";
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment - CineBook</title>
@@ -136,9 +137,9 @@ $currency = "₹";
                         <i data-lucide="credit-card" class="w-8 h-8"></i>
                         <span class="font-semibold">Credit/Debit Card</span>
                     </button>
-                    <button id="tab-wallet" onclick="switchTab('wallet')" class="payment-tab flex flex-col items-center justify-center gap-2 py-6 border border-gray-200 dark:border-borderMain rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-borderMain text-gray-500 dark:text-textMuted">
-                        <i data-lucide="smartphone" class="w-8 h-8"></i>
-                        <span class="font-semibold">Digital Wallet</span>
+                    <button id="tab-upi" onclick="switchTab('upi')" class="payment-tab flex flex-col items-center justify-center gap-2 py-6 border border-gray-200 dark:border-borderMain rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-borderMain text-gray-500 dark:text-textMuted">
+                        <i data-lucide="qr-code" class="w-8 h-8"></i>
+                        <span class="font-semibold">UPI Payment</span>
                     </button>
                 </div>
 
@@ -165,16 +166,22 @@ $currency = "₹";
                     </div>
                 </div>
 
-                <div id="form-wallet" class="space-y-4 hidden pt-2">
-                    <button class="w-full bg-gray-900 text-white dark:bg-white dark:text-black py-4 rounded-lg font-bold hover:bg-black dark:hover:bg-gray-200 transition-colors">
-                        Pay with Apple Pay
-                    </button>
-                    <button class="w-full bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-borderMain text-gray-900 dark:text-white py-4 rounded-lg font-bold hover:bg-gray-50 dark:hover:bg-[#262626] transition-colors shadow-sm">
-                        Pay with Google Pay
-                    </button>
-                    <button class="w-full bg-[#0070ba] text-white py-4 rounded-lg font-bold hover:bg-[#005ea6] transition-colors">
-                        Pay with PayPal
-                    </button>
+                <div id="form-upi" class="space-y-6 hidden pt-2">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 dark:text-gray-300 mb-2">UPI ID</label>
+                        <input type="text" id="upi-id" placeholder="username@bank" class="w-full bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-borderMain rounded-lg px-4 py-3 text-gray-900 dark:text-white outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-shadow">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1 h-[1px] bg-gray-200 dark:bg-borderMain"></div>
+                        <span class="text-sm font-medium text-gray-500 dark:text-textMuted">OR SCAN QR</span>
+                        <div class="flex-1 h-[1px] bg-gray-200 dark:bg-borderMain"></div>
+                    </div>
+                    <div class="flex justify-center py-4">
+                        <div class="w-40 h-40 bg-gray-100 dark:bg-[#1a1a1a] border-2 border-dashed border-gray-300 dark:border-borderMain rounded-xl flex flex-col items-center justify-center text-gray-400">
+                            <i data-lucide="qr-code" class="w-12 h-12 mb-2"></i>
+                            <span class="text-xs font-semibold">Scan with any UPI app</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -273,7 +280,10 @@ $currency = "₹";
                     </div>
                 </div>
                 <div id="card-error" class="hidden mb-4 p-4 text-sm text-red-800 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20" role="alert">
-                    <span class="font-semibold">Action Required:</span> Please fill in all credit/debit card details to proceed. 
+                    <span class="font-semibold">Action Required:</span> <span id="card-error-msg">Please fill in all credit/debit card details to proceed.</span>
+                </div>
+                <div id="upi-error" class="hidden mb-4 p-4 text-sm text-red-800 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20" role="alert">
+                    <span class="font-semibold">Action Required:</span> Please enter your UPI ID to proceed. 
                 </div>
 
                 <form action="success.php" method="POST" onsubmit="return validateCheckout(event)">
@@ -310,7 +320,8 @@ $currency = "₹";
         // Validation logic for the checkout form
         function validateCheckout(event) {
             // Hide previous errors
-            document.getElementById('card-error').classList.add('hidden');
+            if (document.getElementById('card-error')) document.getElementById('card-error').classList.add('hidden');
+            if (document.getElementById('upi-error')) document.getElementById('upi-error').classList.add('hidden');
 
             // 1. Check if user is logged in
             if (!userIsLoggedIn) {
@@ -326,9 +337,44 @@ $currency = "₹";
                 const cardCvv = document.getElementById('card-cvv').value.trim();
                 const cardName = document.getElementById('card-name').value.trim();
 
+                const errorDiv = document.getElementById('card-error');
+                const errorMsg = document.getElementById('card-error-msg');
+
                 if (!cardNum || !cardExp || !cardCvv || !cardName) {
                     event.preventDefault(); // Stop form submission
-                    document.getElementById('card-error').classList.remove('hidden'); // Show error
+                    errorMsg.innerText = "Please fill in all credit/debit card details to proceed.";
+                    errorDiv.classList.remove('hidden'); // Show error
+                    return false;
+                }
+
+                // Expiry date validation
+                let isExpValid = false;
+                if (cardExp.length === 5 && cardExp.includes('/')) {
+                    const [expMonth, expYear] = cardExp.split('/');
+                    const month = parseInt(expMonth, 10);
+                    const year = parseInt(expYear, 10);
+                    if (month >= 1 && month <= 12) {
+                        const now = new Date();
+                        const currentYear = now.getFullYear() % 100;
+                        const currentMonth = now.getMonth() + 1;
+                        
+                        if (year > currentYear || (year === currentYear && month >= currentMonth)) {
+                            isExpValid = true;
+                        }
+                    }
+                }
+
+                if (!isExpValid) {
+                    event.preventDefault();
+                    errorMsg.innerText = "Please enter a valid expiry date in the future (MM/YY).";
+                    errorDiv.classList.remove('hidden');
+                    return false;
+                }
+            } else if (activePaymentTab === 'upi') {
+                const upiId = document.getElementById('upi-id').value.trim();
+                if (!upiId) {
+                    event.preventDefault(); // Stop form submission
+                    document.getElementById('upi-error').classList.remove('hidden'); // Show error
                     return false;
                 }
             }
@@ -341,28 +387,27 @@ $currency = "₹";
             activePaymentTab = tab; // Update state
             
             const cardTab = document.getElementById('tab-card');
-            const walletTab = document.getElementById('tab-wallet');
+            const upiTab = document.getElementById('tab-upi');
             const cardForm = document.getElementById('form-card');
-            const walletForm = document.getElementById('form-wallet');
+            const upiForm = document.getElementById('form-upi');
 
             const activeClass = "payment-tab active flex flex-col items-center justify-center gap-2 py-6 border rounded-xl transition-colors border-brand bg-[#fffcf0] dark:bg-brand/10 text-gray-900 dark:text-white";
             const inactiveClass = "payment-tab flex flex-col items-center justify-center gap-2 py-6 border border-gray-200 dark:border-borderMain rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-borderMain text-gray-500 dark:text-textMuted";
 
-            // Hide card error if switching away from the card tab
-            if (tab !== 'card') {
-                document.getElementById('card-error').classList.add('hidden');
-            }
+            // Hide errors when switching tabs
+            if (document.getElementById('card-error')) document.getElementById('card-error').classList.add('hidden');
+            if (document.getElementById('upi-error')) document.getElementById('upi-error').classList.add('hidden');
 
             if (tab === 'card') {
                 cardTab.className = activeClass;
-                walletTab.className = inactiveClass;
+                upiTab.className = inactiveClass;
                 cardForm.classList.remove('hidden');
-                walletForm.classList.add('hidden');
+                upiForm.classList.add('hidden');
             } else {
-                walletTab.className = activeClass;
+                upiTab.className = activeClass;
                 cardTab.className = inactiveClass;
                 cardForm.classList.add('hidden');
-                walletForm.classList.remove('hidden');
+                upiForm.classList.remove('hidden');
             }
         }
 
@@ -380,3 +425,4 @@ $currency = "₹";
     </script>
 </body>
 </html>
+

@@ -36,11 +36,18 @@ $dates_query->execute();
 $available_dates_result = $dates_query->get_result();
 $available_dates = [];
 while($d = $available_dates_result->fetch_assoc()) {
-    $available_dates[] = $d['show_date'];
+    $available_dates[] = date('d-m-y', strtotime($d['show_date']));
 }
 
 // Determine selected date
-$selected_date = isset($_GET['date']) ? $_GET['date'] : (count($available_dates) > 0 ? $available_dates[0] : date('Y-m-d'));
+$selected_date = isset($_GET['date']) ? $_GET['date'] : (count($available_dates) > 0 ? $available_dates[0] : date('d-m-y'));
+
+// Convert dd-mm-yy back to Y-m-d for database query
+$db_query_date = date('Y-m-d');
+$date_obj = DateTime::createFromFormat('d-m-y', $selected_date);
+if ($date_obj !== false) {
+    $db_query_date = $date_obj->format('Y-m-d');
+}
 
 // Fetch available languages for this movie in the selected city
 $lang_query = $conn->prepare("SELECT DISTINCT language FROM showtimes WHERE movie_id = ? AND city = ? AND show_date >= CURRENT_DATE");
@@ -64,16 +71,16 @@ $shows_sql .= " ORDER BY theater_id ASC, format ASC, show_time ASC";
 
 $shows_stmt = $conn->prepare($shows_sql);
 if ($selected_lang !== 'All') {
-    $shows_stmt->bind_param("isss", $movie_id, $selected_city, $selected_date, $selected_lang);
+    $shows_stmt->bind_param("isss", $movie_id, $selected_city, $db_query_date, $selected_lang);
 } else {
-    $shows_stmt->bind_param("iss", $movie_id, $selected_city, $selected_date);
+    $shows_stmt->bind_param("iss", $movie_id, $selected_city, $db_query_date);
 }
 $shows_stmt->execute();
 $shows_result = $shows_stmt->get_result();
 
 $theaters = [];
 while($show = $shows_result->fetch_assoc()) {
-    $show_datetime = strtotime($selected_date . ' ' . $show['show_time']);
+    $show_datetime = strtotime($db_query_date . ' ' . $show['show_time']);
     $current_datetime = time();
     $minutes_diff = ($current_datetime - $show_datetime) / 60;
     
@@ -101,6 +108,7 @@ while($show = $shows_result->fetch_assoc()) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Tickets - <?php echo htmlspecialchars($movie['title']); ?></title>
@@ -551,3 +559,4 @@ while($show = $shows_result->fetch_assoc()) {
     </script>
 </body>
 </html>
+

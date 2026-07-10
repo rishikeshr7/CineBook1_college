@@ -9,10 +9,32 @@ require_once 'dbconnect.php';
 $sql = "SELECT * FROM movies ORDER BY created_at DESC";
 $result = $conn->query($sql);
 $active_movies_count = $result->num_rows;
+
+// Calculate Total Revenue (Total Amount - Refunded Amount)
+$revenue_query = "SELECT SUM(total_amount - COALESCE(refund_amount, 0)) AS net_revenue FROM bookings";
+$revenue_result = $conn->query($revenue_query);
+$net_revenue = 0;
+if ($revenue_result && $row = $revenue_result->fetch_assoc()) {
+    $net_revenue = (float)$row['net_revenue'];
+}
+
+// Calculate Tickets Sold (excluding cancelled)
+$tickets_query = "SELECT seat_numbers FROM bookings WHERE status != 'Cancelled' OR status IS NULL";
+$tickets_result = $conn->query($tickets_query);
+$tickets_sold = 0;
+if ($tickets_result) {
+    while ($row = $tickets_result->fetch_assoc()) {
+        if (!empty(trim($row['seat_numbers']))) {
+            $seats = explode(',', $row['seat_numbers']);
+            $tickets_sold += count(array_filter($seats));
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <script>
         if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -104,7 +126,7 @@ $active_movies_count = $result->num_rows;
                 <div class="bg-white dark:bg-bgCard border border-gray-200 dark:border-borderMain rounded-xl p-5 flex justify-between items-start shadow-sm">
                     <div>
                         <p class="text-sm font-medium text-gray-500 dark:text-textMuted mb-2">Total Revenue</p>
-                        <h3 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">₹ 124,580</h3>
+                        <h3 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">₹ <?php echo number_format($net_revenue, 0); ?></h3>
                     </div>
                     <div class="flex flex-col items-end">
                         <i data-lucide="indian-rupee" class="w-5 h-5 text-emerald-500 mb-3"></i>
@@ -114,7 +136,7 @@ $active_movies_count = $result->num_rows;
                 <div class="bg-white dark:bg-bgCard border border-gray-200 dark:border-borderMain rounded-xl p-5 flex justify-between items-start shadow-sm">
                     <div>
                         <p class="text-sm font-medium text-gray-500 dark:text-textMuted mb-2">Tickets Sold</p>
-                        <h3 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">8,432</h3>
+                        <h3 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white"><?php echo number_format($tickets_sold, 0); ?></h3>
                     </div>
                     <div class="flex flex-col items-end">
                         <i data-lucide="ticket" class="w-5 h-5 text-blue-500 mb-3"></i>
@@ -325,3 +347,4 @@ $active_movies_count = $result->num_rows;
 
 </body>
 </html>
+

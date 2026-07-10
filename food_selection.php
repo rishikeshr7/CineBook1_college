@@ -16,54 +16,119 @@ if ($showtime_id === 0 || empty($selected_seats)) {
 // Mock Food Database (In a real app, you would fetch this from a 'food_items' table)
 $food_items = [
     [
-        'id' => 1, 'category' => 'Popcorn', 'name' => 'Classic Popcorn (Large)', 
-        'desc' => 'Freshly popped buttery popcorn', 'price' => 350, 'is_veg' => true, 
-        'image' => 'https://images.unsplash.com/photo-1585647347384-2593bc35786b?auto=format&fit=crop&w=400&q=80'
+        'id' => 1, 'category' => 'Popcorn', 'name' => 'Classic Salted Popcorn (Small)', 
+        'desc' => 'Freshly popped buttery salted popcorn', 'price' => 300, 'is_veg' => true, 
+        'image' => 'assets/images/Classic Salted Popcorn (Small).png'
     ],
     [
-        'id' => 2, 'category' => 'Popcorn', 'name' => 'Caramel Popcorn (Medium)', 
-        'desc' => 'Sweet caramel flavored popcorn', 'price' => 280, 'is_veg' => true, 
-        'image' => 'https://images.unsplash.com/photo-1578849278619-e73505e9610f?auto=format&fit=crop&w=400&q=80'
+        'id' => 2, 'category' => 'Popcorn', 'name' => 'Classic Salted Popcorn (Medium)', 
+        'desc' => 'Freshly popped buttery salted popcorn', 'price' => 345, 'is_veg' => true, 
+        'image' => 'assets/images/Classic Salted Popcorn (Medium).png'
     ],
     [
-        'id' => 3, 'category' => 'Popcorn', 'name' => 'Cheese Popcorn (Large)', 
-        'desc' => 'Savory cheese flavored popcorn', 'price' => 380, 'is_veg' => true, 
-        'image' => 'https://images.unsplash.com/photo-1505686994434-e3cc5abf1330?auto=format&fit=crop&w=400&q=80'
+        'id' => 3, 'category' => 'Popcorn', 'name' => 'Classic Salted Popcorn (Large)', 
+        'desc' => 'Freshly popped buttery salted popcorn', 'price' => 390, 'is_veg' => true, 
+        'image' => 'assets/images/Classic Salted Popcorn (Large).png'
     ],
     [
-        'id' => 4, 'category' => 'Beverages', 'name' => 'Coca Cola (Large)', 
+        'id' => 4, 'category' => 'Popcorn', 'name' => 'Cheese Popcorn (Small)', 
+        'desc' => 'Savory cheese flavored popcorn', 'price' => 300, 'is_veg' => true, 
+        'image' => 'assets/images/Cheese Popcorn (Small).png'
+    ],
+    [
+        'id' => 5, 'category' => 'Popcorn', 'name' => 'Cheese Popcorn (Medium)', 
+        'desc' => 'Savory cheese flavored popcorn', 'price' => 345, 'is_veg' => true, 
+        'image' => 'assets/images/Cheese Popcorn (Medium).png'
+    ],
+    [
+        'id' => 6, 'category' => 'Popcorn', 'name' => 'Cheese Popcorn (Large)', 
+        'desc' => 'Savory cheese flavored popcorn', 'price' => 390, 'is_veg' => true, 
+        'image' => 'assets/images/Cheese Popcorn (Large).png'
+    ],
+    [
+        'id' => 7, 'category' => 'Popcorn', 'name' => 'Caramel Popcorn (Small)', 
+        'desc' => 'Sweet caramel flavored popcorn', 'price' => 300, 'is_veg' => true, 
+        'image' => 'assets/images/Caramel Popcorn (Small).png'
+    ],
+    [
+        'id' => 8, 'category' => 'Popcorn', 'name' => 'Caramel Popcorn (Medium)', 
+        'desc' => 'Sweet caramel flavored popcorn', 'price' => 345, 'is_veg' => true, 
+        'image' => 'assets/images/Caramel Popcorn (Medium).png'
+    ],
+    [
+        'id' => 9, 'category' => 'Popcorn', 'name' => 'Caramel Popcorn (Large)', 
+        'desc' => 'Sweet caramel flavored popcorn', 'price' => 390, 'is_veg' => true, 
+        'image' => 'assets/images/Caramel Popcorn (Large).png'
+    ],
+    [
+        'id' => 10, 'category' => 'Beverages', 'name' => 'Coca Cola (Small)', 
+        'desc' => 'Chilled Coca Cola', 'price' => 100, 'is_veg' => true, 
+        'image' => 'assets/images/Coca Cola (Small).png'
+    ],
+    [
+        'id' => 11, 'category' => 'Beverages', 'name' => 'Coca Cola (Medium)', 
+        'desc' => 'Chilled Coca Cola', 'price' => 150, 'is_veg' => true, 
+        'image' => 'assets/images/Coca Cola (Medium).png'
+    ],
+    [
+        'id' => 12, 'category' => 'Beverages', 'name' => 'Coca Cola (Large)', 
         'desc' => 'Chilled Coca Cola', 'price' => 200, 'is_veg' => true, 
-        'image' => 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=400&q=80'
+        'image' => 'assets/images/Coca Cola (Large).png'
     ],
     [
-        'id' => 5, 'category' => 'Beverages', 'name' => 'Pepsi (Large)', 
+        'id' => 13, 'category' => 'Beverages', 'name' => 'Pepsi (Small)', 
+        'desc' => 'Chilled Pepsi', 'price' => 100, 'is_veg' => true, 
+        'image' => 'assets/images/Pepsi (Small).png'
+    ],
+    [
+        'id' => 14, 'category' => 'Beverages', 'name' => 'Pepsi (Medium)', 
+        'desc' => 'Chilled Pepsi', 'price' => 150, 'is_veg' => true, 
+        'image' => 'assets/images/Pepsi (Medium).png'
+    ],
+    [
+        'id' => 15, 'category' => 'Beverages', 'name' => 'Pepsi (Large)', 
         'desc' => 'Chilled Pepsi', 'price' => 200, 'is_veg' => true, 
-        'image' => 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=400&q=80'
+        'image' => 'assets/images/Pepsi (Large).png'
     ],
     [
-        'id' => 6, 'category' => 'Snacks', 'name' => 'Nachos with Cheese', 
+        'id' => 16, 'category' => 'Beverages', 'name' => 'Mountain Dew (Small)', 
+        'desc' => 'Refreshing Mountain Dew', 'price' => 100, 'is_veg' => true, 
+        'image' => 'assets/images/Mountain Dew (Small).png'
+    ],
+    [
+        'id' => 17, 'category' => 'Beverages', 'name' => 'Mountain Dew (Medium)', 
+        'desc' => 'Refreshing Mountain Dew', 'price' => 150, 'is_veg' => true, 
+        'image' => 'assets/images/Mountain Dew (Medium).png'
+    ],
+    [
+        'id' => 18, 'category' => 'Beverages', 'name' => 'Mountain Dew (Large)', 
+        'desc' => 'Refreshing Mountain Dew', 'price' => 200, 'is_veg' => true, 
+        'image' => 'assets/images/Mountain Dew (Large).png'
+    ],
+    [
+        'id' => 19, 'category' => 'Snacks', 'name' => 'Nachos with Cheese', 
         'desc' => 'Crispy nachos with cheese dip', 'price' => 300, 'is_veg' => true, 
         'image' => 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?auto=format&fit=crop&w=400&q=80'
     ],
     [
-        'id' => 7, 'category' => 'Snacks', 'name' => 'Hot Dog', 
+        'id' => 20, 'category' => 'Snacks', 'name' => 'Hot Dog', 
         'desc' => 'Classic hot dog with ketchup & mustard', 'price' => 250, 'is_veg' => false, 
-        'image' => 'https://images.unsplash.com/photo-1590165482129-1b8b27698780?auto=format&fit=crop&w=400&q=80'
+        'image' => 'assets/images/Hot Dog.png'
     ],
     [
-        'id' => 8, 'category' => 'Snacks', 'name' => 'Chicken Nuggets', 
+        'id' => 21, 'category' => 'Snacks', 'name' => 'Chicken Nuggets', 
         'desc' => '6 pieces crispy chicken nuggets', 'price' => 280, 'is_veg' => false, 
         'image' => 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=400&q=80'
     ],
     [
-        'id' => 9, 'category' => 'Combos', 'name' => 'Premium Combo', 
+        'id' => 22, 'category' => 'Combos', 'name' => 'Premium Combo', 
         'desc' => '2 Large Popcorn + 2 Large Drinks + Nachos', 'price' => 950, 'is_veg' => true, 
-        'image' => 'https://images.unsplash.com/photo-1585647347384-2593bc35786b?auto=format&fit=crop&w=400&q=80'
+        'image' => 'assets/images/Premium Combo.png'
     ],
     [
-        'id' => 10, 'category' => 'Combos', 'name' => 'Classic Combo', 
+        'id' => 23, 'category' => 'Combos', 'name' => 'Classic Combo', 
         'desc' => '1 Large Popcorn + 2 Medium Drinks', 'price' => 650, 'is_veg' => true, 
-        'image' => 'https://images.unsplash.com/photo-1505686994434-e3cc5abf1330?auto=format&fit=crop&w=400&q=80'
+        'image' => 'assets/images/Classic Combo.png'
     ]
 ];
 ?>
@@ -71,6 +136,7 @@ $food_items = [
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grab a Bite - CineBook</title>
@@ -185,39 +251,50 @@ $food_items = [
         </div>
 
         <div class="w-full lg:w-[350px] shrink-0">
-            <div class="sticky top-24 bg-white dark:bg-bgCard border border-gray-200 dark:border-borderMain rounded-2xl p-6 shadow-sm">
+            <div class="sticky top-24 bg-white dark:bg-bgCard border border-gray-200 dark:border-borderMain rounded-2xl shadow-sm">
                 
-                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2 border-b border-gray-100 dark:border-borderMain pb-4">
-                    <i data-lucide="shopping-cart" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i> Your Cart
-                </h2>
+                <!-- Ticket(s) Price -->
+                <div class="px-6 py-5 flex justify-between items-center border-b border-gray-100 dark:border-borderMain">
+                    <span class="text-[15px] font-medium text-gray-600 dark:text-gray-400">Ticket(s) price</span>
+                    <span class="text-lg font-bold text-gray-900 dark:text-white">₹<?php echo number_format($ticket_amount, 2); ?></span>
+                </div>
 
-                <div id="cart-items" class="space-y-4 max-h-[300px] overflow-y-auto hide-scrollbar mb-6">
-                    <div id="empty-cart-msg" class="text-center py-6">
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Your cart is empty. Add some items!</p>
+                <!-- Your Cart Header -->
+                <div class="px-6 py-5 border-b border-gray-100 dark:border-borderMain">
+                    <h2 class="text-[17px] font-bold text-gray-900 dark:text-white">Your Cart</h2>
+                </div>
+
+                <div id="cart-items" class="space-y-4 max-h-[300px] overflow-y-auto hide-scrollbar">
+                    <div id="empty-cart-msg" class="flex flex-col items-center justify-center py-10 px-6">
+                        <svg class="w-20 h-20 text-gray-300 dark:text-gray-600 mb-4" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Bucket background -->
+                            <path d="M25 40 L 35 90 L 65 90 L 75 40 Z" fill="#ffffff" stroke="currentColor" stroke-width="2"/>
+                            <!-- Red stripes -->
+                            <path d="M35 40 L 41 90 L 47 90 L 45 40 Z" fill="#EF4444" stroke="currentColor" stroke-width="2"/>
+                            <path d="M55 40 L 53 90 L 59 90 L 65 40 Z" fill="#EF4444" stroke="currentColor" stroke-width="2"/>
+                            <!-- Popcorn -->
+                            <path d="M30 35 C 25 35, 25 25, 35 25 C 35 15, 45 15, 45 25 C 50 10, 60 15, 60 25 C 65 15, 75 15, 75 25 C 80 25, 80 35, 70 35 C 75 45, 25 45, 30 35 Z" fill="#F5C518" stroke="currentColor" stroke-width="2"/>
+                            <!-- Cute Face -->
+                            <path d="M42 65 C 45 70, 55 70, 58 65" stroke="#121212" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            <circle cx="40" cy="58" r="2.5" fill="#121212"/>
+                            <circle cx="60" cy="58" r="2.5" fill="#121212"/>
+                        </svg>
+                        <p class="text-[15px] font-medium text-gray-600 dark:text-gray-400 text-center">Fill this cart with your favorite food combos!</p>
                     </div>
                 </div>
 
-                <div id="cart-summary" class="hidden border-t border-gray-100 dark:border-borderMain pt-4 mb-6 space-y-2">
-                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>Tickets Total</span>
-                        <span>₹<?php echo number_format($ticket_amount); ?></span>
-                    </div>
-                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>F&B Total</span>
-                        <span id="cart-fb-total">₹0</span>
-                    </div>
-                    <div class="flex justify-between font-bold text-lg text-gray-900 dark:text-white pt-2 border-t border-gray-100 dark:border-borderMain">
-                        <span>Grand Total</span>
-                        <span id="cart-grand-total">₹<?php echo number_format($ticket_amount); ?></span>
-                    </div>
+                <div id="cart-summary" class="hidden px-6 py-5 border-t border-gray-100 dark:border-borderMain flex justify-between items-center">
+                    <span class="text-[15px] font-medium text-gray-600 dark:text-gray-400">Current Total</span>
+                    <span id="cart-grand-total" class="font-bold text-xl text-gray-900 dark:text-white">₹<?php echo number_format($ticket_amount, 2); ?></span>
                 </div>
-
-                <form id="checkout-form" action="payment.php" method="POST" class="flex flex-col gap-3">
-                    <input type="hidden" name="showtime_id" value="<?php echo $showtime_id; ?>">
-                    <input type="hidden" name="selected_seats" value="<?php echo htmlspecialchars($selected_seats); ?>">
-                    <input type="hidden" name="ticket_amount" value="<?php echo $ticket_amount; ?>">
-                    
-                    <input type="hidden" name="food_data" id="food_data_input" value="[]">
+                
+                <div class="px-6 pb-6 pt-2">
+                    <form id="checkout-form" action="payment.php" method="POST" class="flex flex-col gap-3">
+                        <input type="hidden" name="showtime_id" value="<?php echo $showtime_id; ?>">
+                        <input type="hidden" name="selected_seats" value="<?php echo htmlspecialchars($selected_seats); ?>">
+                        <input type="hidden" name="ticket_amount" value="<?php echo $ticket_amount; ?>">
+                        
+<input type="hidden" name="food_data" id="food_data_input" value="[]">
                     <input type="hidden" name="food_amount" id="food_amount_input" value="0">
                     
                     <button type="submit" id="checkout-btn" disabled class="w-full py-3 bg-brand/50 text-black/50 dark:bg-[#333] dark:text-gray-500 text-sm font-bold rounded-xl transition-colors cursor-not-allowed">
@@ -235,42 +312,11 @@ $food_items = [
     </div>
 
     <script>
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-
-        // --- Category Filtering ---
-        function filterMenu(category, btnElement) {
-            // Update active button styles
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('border-brand', 'text-brand', 'active');
-                btn.classList.add('border-gray-300', 'dark:border-borderMain', 'text-gray-600', 'dark:text-gray-300');
-            });
-            
-            btnElement.classList.add('border-brand', 'text-brand', 'active');
-            btnElement.classList.remove('border-gray-300', 'dark:border-borderMain', 'text-gray-600', 'dark:text-gray-300');
-
-            // Filter items
-            const cards = document.querySelectorAll('.food-card');
-            cards.forEach(card => {
-                if (category === 'All' || card.getAttribute('data-category') === category) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-
-        // --- Cart Logic ---
-        let cart = {}; // Format: { id: { name, price, qty } }
         const ticketAmount = <?php echo $ticket_amount; ?>;
+        let cart = {};
 
         function addToCart(id, name, price) {
-            if (!cart[id]) {
-                cart[id] = { name: name, price: price, qty: 1 };
-            } else {
-                cart[id].qty += 1;
-            }
+            cart[id] = { name: name, price: price, qty: 1 };
             updateItemButton(id);
             renderCart();
         }
@@ -294,9 +340,9 @@ $food_items = [
             if (cart[id] && cart[id].qty > 0) {
                 container.innerHTML = `
                     <div class="flex items-center border border-brand rounded-lg bg-brand/10 dark:bg-transparent overflow-hidden h-8">
-                        <button onclick="updateQuantity(${id}, -1)" class="w-8 flex items-center justify-center text-yellow-700 dark:text-brand hover:bg-brand hover:text-black transition-colors">-</button>
+                        <button type="button" onclick="updateQuantity(${id}, -1)" class="w-8 flex items-center justify-center text-yellow-700 dark:text-brand hover:bg-brand hover:text-black transition-colors">-</button>
                         <span class="w-6 text-center text-sm font-bold text-gray-900 dark:text-white">${cart[id].qty}</span>
-                        <button onclick="updateQuantity(${id}, 1)" class="w-8 flex items-center justify-center text-yellow-700 dark:text-brand hover:bg-brand hover:text-black transition-colors">+</button>
+                        <button type="button" onclick="updateQuantity(${id}, 1)" class="w-8 flex items-center justify-center text-yellow-700 dark:text-brand hover:bg-brand hover:text-black transition-colors">+</button>
                     </div>
                 `;
             } else {
@@ -307,7 +353,7 @@ $food_items = [
                 const price = parseFloat(priceText);
                 
                 container.innerHTML = `
-                    <button onclick="addToCart(${id}, '${name}', ${price})" 
+                    <button type="button" onclick="addToCart(${id}, '${name}', ${price})" 
                             class="px-5 py-1.5 bg-brand/10 dark:bg-brand text-yellow-700 dark:text-black text-sm font-bold rounded-lg border border-brand hover:bg-brand hover:text-black transition-colors">
                         Add
                     </button>
@@ -344,9 +390,9 @@ $food_items = [
                             <div class="flex items-center gap-3">
                                 <span class="text-xs text-gray-500">₹${item.price.toLocaleString('en-IN')}</span>
                                 <div class="flex items-center bg-gray-100 dark:bg-[#1a1a1a] rounded text-xs">
-                                    <button onclick="updateQuantity(${id}, -1)" class="px-2 py-0.5 hover:text-brand transition-colors">-</button>
+                                    <button type="button" onclick="updateQuantity(${id}, -1)" class="px-2 py-0.5 hover:text-brand transition-colors">-</button>
                                     <span class="font-bold w-3 text-center">${item.qty}</span>
-                                    <button onclick="updateQuantity(${id}, 1)" class="px-2 py-0.5 hover:text-brand transition-colors">+</button>
+                                    <button type="button" onclick="updateQuantity(${id}, 1)" class="px-2 py-0.5 hover:text-brand transition-colors">+</button>
                                 </div>
                             </div>
                         </div>
@@ -356,12 +402,25 @@ $food_items = [
             }
 
             if (itemsCount === 0) {
-                // FIXED: Re-inject the empty message HTML safely to prevent JS errors
                 cartContainer.innerHTML = `
-                    <div id="empty-cart-msg" class="text-center py-6">
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Your cart is empty. Add some items!</p>
+                    <div id="empty-cart-msg" class="flex flex-col items-center justify-center py-10 px-6">
+                        <svg class="w-20 h-20 text-gray-300 dark:text-gray-600 mb-4" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Bucket background -->
+                            <path d="M25 40 L 35 90 L 65 90 L 75 40 Z" fill="#ffffff" stroke="currentColor" stroke-width="2"/>
+                            <!-- Red stripes -->
+                            <path d="M35 40 L 41 90 L 47 90 L 45 40 Z" fill="#EF4444" stroke="currentColor" stroke-width="2"/>
+                            <path d="M55 40 L 53 90 L 59 90 L 65 40 Z" fill="#EF4444" stroke="currentColor" stroke-width="2"/>
+                            <!-- Popcorn -->
+                            <path d="M30 35 C 25 35, 25 25, 35 25 C 35 15, 45 15, 45 25 C 50 10, 60 15, 60 25 C 65 15, 75 15, 75 25 C 80 25, 80 35, 70 35 C 75 45, 25 45, 30 35 Z" fill="#F5C518" stroke="currentColor" stroke-width="2"/>
+                            <!-- Cute Face -->
+                            <path d="M42 65 C 45 70, 55 70, 58 65" stroke="#121212" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            <circle cx="40" cy="58" r="2.5" fill="#121212"/>
+                            <circle cx="60" cy="58" r="2.5" fill="#121212"/>
+                        </svg>
+                        <p class="text-[15px] font-medium text-gray-600 dark:text-gray-400 text-center">Fill this cart with your favorite food combos!</p>
                     </div>
                 `;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
                 
                 summary.classList.add('hidden');
                 
@@ -374,15 +433,15 @@ $food_items = [
                 foodAmountInput.value = '0';
                 
                 // Extra security: force totals to visually reset just in case the UI unhides
-                fbTotalDisplay.textContent = '₹0';
-                grandTotalDisplay.textContent = '₹' + ticketAmount.toLocaleString('en-IN');
+                if (fbTotalDisplay) fbTotalDisplay.textContent = '₹0';
+                if (grandTotalDisplay) grandTotalDisplay.textContent = '₹' + ticketAmount.toLocaleString('en-IN');
             } else {
                 summary.classList.remove('hidden');
                 
                 const grandTotal = ticketAmount + foodTotal;
                 
-                fbTotalDisplay.textContent = '₹' + foodTotal.toLocaleString('en-IN');
-                grandTotalDisplay.textContent = '₹' + grandTotal.toLocaleString('en-IN');
+                if (fbTotalDisplay) fbTotalDisplay.textContent = '₹' + foodTotal.toLocaleString('en-IN');
+                if (grandTotalDisplay) grandTotalDisplay.textContent = '₹' + grandTotal.toLocaleString('en-IN');
                 
                 // Enable checkout
                 checkoutBtn.disabled = false;
@@ -393,6 +452,31 @@ $food_items = [
                 foodDataInput.value = JSON.stringify(cart);
                 foodAmountInput.value = foodTotal;
             }
+        }
+
+        function filterMenu(category, btn) {
+            // Update active state of buttons
+            const allBtns = document.querySelectorAll('.filter-btn');
+            const activeClasses = ['active', 'border-brand', 'text-brand'];
+            const inactiveClasses = ['border-gray-300', 'dark:border-borderMain', 'text-gray-600', 'dark:text-gray-300', 'hover:border-gray-400', 'dark:hover:border-gray-500'];
+            
+            allBtns.forEach(b => {
+                b.classList.remove(...activeClasses);
+                b.classList.add(...inactiveClasses);
+            });
+            
+            btn.classList.remove(...inactiveClasses);
+            btn.classList.add(...activeClasses);
+
+            // Show/Hide food cards
+            const allCards = document.querySelectorAll('.food-card');
+            allCards.forEach(card => {
+                if (category === 'All' || card.getAttribute('data-category') === category) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
         }
 
         // --- Handle Skip & Continue Safely ---
@@ -408,6 +492,10 @@ $food_items = [
             // Sync the form inputs with the empty JS cart on page load
             renderCart();
         });
+
     </script>
 </body>
 </html>
+
+
+

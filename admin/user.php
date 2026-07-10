@@ -11,7 +11,7 @@ $result = $conn->query($sql);
 $total_users = $result ? $result->num_rows : 0;
 
 // Fetch total bookings and total revenue from the bookings table
-$stats_result = $conn->query("SELECT COUNT(*) as total_bookings, COALESCE(SUM(total_amount), 0) as total_revenue FROM bookings");
+$stats_result = $conn->query("SELECT COUNT(*) as total_bookings, COALESCE(SUM(total_amount - COALESCE(refund_amount, 0)), 0) as total_revenue FROM bookings");
 $stats = $stats_result ? $stats_result->fetch_assoc() : ['total_bookings' => 0, 'total_revenue' => 0];
 $total_bookings = $stats['total_bookings'];
 $total_revenue = $stats['total_revenue'];
@@ -19,6 +19,7 @@ $total_revenue = $stats['total_revenue'];
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <script>
         if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -99,7 +100,7 @@ $total_revenue = $stats['total_revenue'];
                 <div class="bg-white dark:bg-bgCard border border-gray-200 dark:border-borderMain rounded-xl p-5 shadow-sm">
                     <p class="text-sm font-medium text-gray-500 dark:text-textMuted mb-2">Total Revenue</p>
                     <h3 class="text-3xl font-bold tracking-tight text-brand mb-1">₹<?php echo number_format($total_revenue, 2); ?></h3>
-                    <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">From ticket sales</p>
+                    <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Revenue from users</p>
                 </div>
             </div>
 
@@ -138,7 +139,7 @@ $total_revenue = $stats['total_revenue'];
                                             $initial = strtoupper(substr(trim($user['fullname']), 0, 1));
                                             
                                             // 2. Format the created_at timestamp to just show YYYY-MM-DD
-                                            $registered_date = date('Y-m-d', strtotime($user['created_at']));
+                                            $registered_date = date('d-m-y', strtotime($user['created_at']));
                                             
                                             // 3. Get REAL bookings and spent from database
                                             $user_stats_stmt = $conn->prepare("SELECT COUNT(*) as bookings, COALESCE(SUM(total_amount), 0) as spent FROM bookings WHERE user_id = ?");
@@ -234,3 +235,4 @@ $total_revenue = $stats['total_revenue'];
     </script>
 </body>
 </html>
+

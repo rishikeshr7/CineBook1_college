@@ -236,6 +236,7 @@ if (!empty($bookings)) {
 <!DOCTYPE html>
 <html lang="en" class="transition-colors duration-300">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Bookings - CineBook</title>
@@ -424,7 +425,7 @@ if (!empty($bookings)) {
                                         <div class="grid grid-cols-2 gap-y-3.5 gap-x-6 text-sm text-gray-600 dark:text-gray-300 mb-4 pt-2">
                                             <div class="flex items-center gap-2.5">
                                                 <i data-lucide="calendar" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
-                                                <span class="font-medium"><?php echo date('Y-m-d', strtotime($booking['show_date'])); ?></span>
+                                                <span class="font-medium"><?php echo date('d-m-y', strtotime($booking['show_date'])); ?></span>
                                             </div>
                                             <div class="flex items-center gap-2.5">
                                                 <i data-lucide="clock" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
@@ -505,7 +506,7 @@ if (!empty($bookings)) {
                                         <div class="grid grid-cols-2 gap-y-3.5 gap-x-6 text-sm text-gray-500 dark:text-gray-400 mb-4 pt-2">
                                             <div class="flex items-center gap-2.5">
                                                 <i data-lucide="calendar" class="w-4 h-4 opacity-70"></i>
-                                                <span class="font-medium"><?php echo date('Y-m-d', strtotime($booking['show_date'])); ?></span>
+                                                <span class="font-medium"><?php echo date('d-m-y', strtotime($booking['show_date'])); ?></span>
                                             </div>
                                             <div class="flex items-center gap-2.5">
                                                 <i data-lucide="clock" class="w-4 h-4 opacity-70"></i>
@@ -557,7 +558,7 @@ if (!empty($bookings)) {
                                         $poster_src = 'admin/' . $poster_src;
                                     }
                                     ?>
-                                    <img src="<?php echo $poster_src; ?>" alt="Poster" class="w-full h-full object-cover">
+                                    <img src="<?php echo $poster_src; ?>" alt="Poster" class="w-full h-full object-cover grayscale opacity-70">
                                 </div>
                                 
                                 <!-- Booking Details Container -->
@@ -574,7 +575,7 @@ if (!empty($bookings)) {
                                     </div>
                                     
                                     <div class="flex gap-8 text-xs text-gray-500 dark:text-gray-400 my-4">
-                                        <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> <?php echo date('Y-m-d', strtotime($booking['show_date'])); ?></div>
+                                        <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> <?php echo date('d-m-y', strtotime($booking['show_date'])); ?></div>
                                         <div class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i> <?php echo htmlspecialchars($booking['cinema_name']); ?></div>
                                     </div>
                                     
@@ -708,6 +709,46 @@ if (!empty($bookings)) {
         </div>
     </div>
 
+    <!-- Cancellation Confirmation Modal -->
+    <div id="cancel-confirm-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#262626] rounded-2xl w-full max-w-sm mx-4 shadow-2xl relative flex flex-col font-sans p-6 text-center transform scale-95 opacity-0 transition-all duration-300" id="cancel-confirm-content">
+            <div class="w-16 h-16 bg-red-50 dark:bg-red-900/30 border-2 border-red-100 dark:border-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500 dark:text-red-400"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Cancel Booking?</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Are you sure you want to cancel this booking? This action cannot be undone.</p>
+            <div class="flex gap-3 w-full">
+                <button type="button" onclick="closeCancelConfirmModal()" class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-200 dark:hover:bg-[#262626] transition-colors">
+                    No, Keep it
+                </button>
+                <button type="button" id="confirm-cancel-btn" class="flex-1 px-4 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors shadow-sm">
+                    Yes, Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancellation Success Modal -->
+    <div id="cancel-success-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#262626] rounded-2xl w-full max-w-sm mx-4 shadow-2xl relative flex flex-col font-sans p-6 text-center transform scale-95 opacity-0 transition-all duration-300" id="cancel-success-content">
+            <div class="w-16 h-16 bg-green-50 dark:bg-green-900/30 border-2 border-green-100 dark:border-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check-circle-2" class="w-8 h-8 text-green-500 dark:text-green-400"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Booking Cancelled!</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Your ticket has been successfully cancelled.</p>
+            
+            <div class="bg-gray-50 dark:bg-[#1a1a1a] border border-gray-100 dark:border-[#262626] rounded-xl p-4 mb-6">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Refund Amount</p>
+                <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400" id="refund-amount-text">₹0</p>
+                <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">Will be credited to original payment method in 3-5 days.</p>
+            </div>
+
+            <button type="button" onclick="closeCancelSuccessModal()" class="w-full px-4 py-3 bg-[#F5C518] text-black font-bold rounded-xl hover:bg-yellow-500 transition-colors shadow-sm">
+                Done
+            </button>
+        </div>
+    </div>
+
     <script>
         // Initialize Lucide icons on page load
         if (typeof lucide !== 'undefined') { 
@@ -794,42 +835,133 @@ if (!empty($bookings)) {
         // Close on clicking outside modal card or pressing escape key
         window.addEventListener('click', (e) => {
             const modal = document.getElementById('ticket-modal');
+            const cancelConfirm = document.getElementById('cancel-confirm-modal');
+            const cancelSuccess = document.getElementById('cancel-success-modal');
+            
             if (e.target === modal) {
                 closeTicketModal();
+            }
+            if (e.target === cancelConfirm) {
+                closeCancelConfirmModal();
+            }
+            if (e.target === cancelSuccess) {
+                closeCancelSuccessModal();
             }
         });
         
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeTicketModal();
+                
+                const confirmModal = document.getElementById('cancel-confirm-modal');
+                if (confirmModal && !confirmModal.classList.contains('hidden')) {
+                    closeCancelConfirmModal();
+                }
+                
+                const sModal = document.getElementById('cancel-success-modal');
+                if (sModal && !sModal.classList.contains('hidden')) {
+                    closeCancelSuccessModal();
+                }
             }
         });
 
-        async function cancelTicket(bookingId) {
-            if (!confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
-                return;
-            }
+        let currentBookingToCancel = null;
+
+        function cancelTicket(bookingId) {
+            currentBookingToCancel = bookingId;
+            const modal = document.getElementById('cancel-confirm-modal');
+            const content = document.getElementById('cancel-confirm-content');
             
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeCancelConfirmModal() {
+            const modal = document.getElementById('cancel-confirm-modal');
+            const content = document.getElementById('cancel-confirm-content');
+            
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                currentBookingToCancel = null;
+            }, 300);
+        }
+        
+        function closeCancelSuccessModal() {
+            const modal = document.getElementById('cancel-success-modal');
+            const content = document.getElementById('cancel-success-content');
+            
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                window.location.reload();
+            }, 300);
+        }
+
+        document.getElementById('confirm-cancel-btn').addEventListener('click', async () => {
+            if (!currentBookingToCancel) return;
+            
+            const btn = document.getElementById('confirm-cancel-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin mx-auto"></i>';
+            btn.disabled = true;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
             try {
                 const response = await fetch('cancel_booking.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ booking_id: bookingId })
+                    body: JSON.stringify({ booking_id: currentBookingToCancel })
                 });
                 
                 const data = await response.json();
                 
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+
                 if (data.success) {
-                    alert('Booking cancelled successfully! Refund Amount: ₹' + data.refund_amount);
-                    window.location.reload();
+                    closeCancelConfirmModal();
+                    
+                    setTimeout(() => {
+                        const sModal = document.getElementById('cancel-success-modal');
+                        const sContent = document.getElementById('cancel-success-content');
+                        document.getElementById('refund-amount-text').textContent = '₹' + parseFloat(data.refund_amount).toFixed(0);
+                        
+                        sModal.classList.remove('hidden');
+                        sModal.classList.add('flex');
+                        
+                        setTimeout(() => {
+                            sContent.classList.remove('scale-95', 'opacity-0');
+                            sContent.classList.add('scale-100', 'opacity-100');
+                        }, 10);
+                    }, 300);
+
                 } else {
                     alert('Failed to cancel booking: ' + (data.message || 'Unknown error'));
+                    closeCancelConfirmModal();
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert('An error occurred while trying to cancel the booking.');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                closeCancelConfirmModal();
             }
-        }
+        });
     </script>
 </body>
 </html>
+

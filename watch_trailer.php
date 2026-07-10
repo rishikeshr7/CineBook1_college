@@ -91,6 +91,7 @@ $rec_stmt->close();
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watch Trailer - <?php echo htmlspecialchars($movie['title']); ?> - CineBook</title>
@@ -326,3 +327,5 @@ $rec_stmt->close();
     </script>
 </body>
 </html>
+
+

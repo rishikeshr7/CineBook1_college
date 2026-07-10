@@ -41,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $prerelease_error = false;
         if (!empty($new_movie['release_date']) && strtotime($show_date) < strtotime($new_movie['release_date'])) {
             $prerelease_error = true;
-            $error_message = 'Cannot schedule before the release date (' . date('d M Y', strtotime($new_movie['release_date'])) . ').';
+            $error_message = 'Cannot schedule before the release date (' . date('d-m-y', strtotime($new_movie['release_date'])) . ').';
         }
 
         if (!$prerelease_error) {
@@ -146,6 +146,7 @@ $selected_theater = htmlspecialchars($showtime['theater_id']);
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <script>
         if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -200,9 +201,11 @@ $selected_theater = htmlspecialchars($showtime['theater_id']);
         }
         
         ::-webkit-calendar-picker-indicator {
-            filter: invert(1);
             opacity: 0.5;
             cursor: pointer;
+        }
+        html.dark ::-webkit-calendar-picker-indicator {
+            filter: invert(1);
         }
     </style>
 </head>
@@ -444,3 +447,4 @@ $selected_theater = htmlspecialchars($showtime['theater_id']);
     </script>
 </body>
 </html>
+

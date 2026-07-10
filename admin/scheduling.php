@@ -66,13 +66,14 @@ if ($stmt) {
 // Group showtimes by Date string for the new list design
 $grouped_showtimes = [];
 foreach ($all_showtimes_list as $showtime) {
-    $date_str = date('F j, Y', strtotime($showtime['show_date']));
+    $date_str = date('d-m-y', strtotime($showtime['show_date']));
     $grouped_showtimes[$date_str][] = $showtime;
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <script>
         if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -131,8 +132,11 @@ foreach ($all_showtimes_list as $showtime) {
             background-size: 1em;
         }
         ::-webkit-calendar-picker-indicator {
-            filter: invert(1);
+            opacity: 0.5;
             cursor: pointer;
+        }
+        html.dark ::-webkit-calendar-picker-indicator {
+            filter: invert(1);
         }
     </style>
 </head>
@@ -361,3 +365,4 @@ foreach ($all_showtimes_list as $showtime) {
     </script>
 </body>
 </html>
+

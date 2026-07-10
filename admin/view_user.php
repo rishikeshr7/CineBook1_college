@@ -37,8 +37,8 @@ if ($stmt) {
 $initial = strtoupper(substr(trim($user['fullname']), 0, 1));
 
 // 2. Format dates
-$registered_date = date('F j, Y, g:i a', strtotime($user['created_at']));
-$member_since = date('M Y', strtotime($user['created_at']));
+$registered_date = date('d-m-y g:i a', strtotime($user['created_at']));
+$member_since = date('m-y', strtotime($user['created_at']));
 
 // 3. Get REAL stats from bookings table
 $stats_stmt = $conn->prepare("SELECT COUNT(*) as total_bookings, COALESCE(SUM(total_amount), 0) as total_spent FROM bookings WHERE user_id = ?");
@@ -55,7 +55,7 @@ $last_active_stmt->bind_param("i", $user_id);
 $last_active_stmt->execute();
 $last_active_res = $last_active_stmt->get_result();
 $last_active_row = $last_active_res->fetch_assoc();
-$real_last_active = $last_active_row ? date('M j, Y', strtotime($last_active_row['booking_date'])) : 'No activity';
+$real_last_active = $last_active_row ? date('d-m-y', strtotime($last_active_row['booking_date'])) : 'No activity';
 $last_active_stmt->close();
 
 // Fetch real bookings for this user
@@ -82,6 +82,7 @@ $bookings_stmt->close();
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <script>
         if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -246,7 +247,7 @@ $bookings_stmt->close();
                                     <?php if (!empty($user_bookings)): ?>
                                         <?php foreach ($user_bookings as $booking): 
                                             $show_datetime = strtotime($booking['show_date'] . ' ' . $booking['show_time']);
-                                            $booking_date_fmt = date('M d, Y, g:i A', $show_datetime);
+                                            $booking_date_fmt = date('d-m-y g:i A', $show_datetime);
                                             $amount_fmt = '₹' . number_format($booking['total_amount'], 2);
                                             
                                             // Determine status based on showtime vs now
@@ -297,3 +298,4 @@ $bookings_stmt->close();
     </script>
 </body>
 </html>
+

@@ -12,7 +12,7 @@ require_once 'dbconnect.php';
 
 // 1. Set the headers to force a CSV file download
 header('Content-Type: text/csv; charset=utf-8');
-header('Content-Disposition: attachment; filename=users_export_' . date('Y-m-d') . '.csv');
+header('Content-Disposition: attachment; filename=users_export_' . date('d-m-y') . '.csv');
 
 // 2. Open the output stream
 $output = fopen('php://output', 'w');
@@ -28,7 +28,7 @@ if ($result && $result->num_rows > 0) {
     // 5. Loop through the rows and output them to the CSV
     while ($row = $result->fetch_assoc()) {
         // Format the date if desired, or output exactly as it is in the DB
-        $formatted_date = date('Y-m-d H:i:s', strtotime($row['created_at']));
+        $formatted_date = date('d-m-y H:i:s', strtotime($row['created_at']));
         
         $lineData = array(
             $row['id'], 

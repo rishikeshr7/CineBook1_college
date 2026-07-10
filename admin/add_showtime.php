@@ -139,6 +139,7 @@ $movies_result = $conn->query("SELECT id, title FROM movies ORDER BY title ASC")
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <script>
         if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -193,9 +194,11 @@ $movies_result = $conn->query("SELECT id, title FROM movies ORDER BY title ASC")
         }
         
         ::-webkit-calendar-picker-indicator {
-            filter: invert(1);
             opacity: 0.5;
             cursor: pointer;
+        }
+        html.dark ::-webkit-calendar-picker-indicator {
+            filter: invert(1);
         }
     </style>
 </head>
@@ -313,7 +316,7 @@ $movies_result = $conn->query("SELECT id, title FROM movies ORDER BY title ASC")
                             </div>
                             <div>
                                 <label class="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Total Seats</label>
-                                <input type="number" name="total_seats" value="200" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none transition-colors">
+                                <input type="number" name="total_seats" value="192" class="w-full bg-gray-50 dark:bg-inputBg border border-gray-200 dark:border-inputBorder text-gray-900 dark:text-white rounded-lg p-3 text-sm focus:border-brand focus:outline-none transition-colors">
                             </div>
                         </div>
 
@@ -504,3 +507,4 @@ $movies_result = $conn->query("SELECT id, title FROM movies ORDER BY title ASC")
     </script>
 </body>
 </html>
+

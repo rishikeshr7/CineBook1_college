@@ -50,7 +50,7 @@ try {
 }
 
 // Formatting Details
-$display_date = date('Y-m-d', strtotime($showtime['show_date']));
+$display_date = date('d-m-y', strtotime($showtime['show_date']));
 $display_time = date('H:i', strtotime($showtime['show_time']));
 
 // Pricing Tiers from Database
@@ -73,6 +73,7 @@ $total_columns = 16;
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
+    <link rel="icon" type="image/svg+xml" href="/CineBook/favicon.svg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select Seats - <?php echo htmlspecialchars($showtime['movie_title']); ?></title>
@@ -121,29 +122,40 @@ $total_columns = 16;
             transition: all 0.2s ease-in-out;
         }
 
-        /* Icon Colors - Ensure symbols remain black when selected/hovered */
+        /* Icon Colors - Ensure symbols remain black when selected */
         .seat-icon { color: #000000; }
         html.dark .seat-icon { color: #a3a3a3; }
-        .seat-btn:hover .seat-icon, 
         .seat-btn.selected .seat-icon { color: #000000 !important; }
 
-        /* VIP Tier (Purple borders, Purple fill on hover) */
+        /* VIP Tier (Purple borders, Lighter Purple fill on hover) */
         .seat-vip.available { border-color: #a855f7; }
-        .seat-vip.available:hover, .seat-vip.selected { 
+        .seat-vip.available:not(.selected):hover { 
+            background-color: rgba(168, 85, 247, 0.2); 
+            border-color: #a855f7; 
+        }
+        .seat-vip.selected { 
             background-color: #a855f7; 
             border-color: #a855f7; 
         }
 
-        /* Premium Tier (Blue borders, Blue fill on hover) */
+        /* Premium Tier (Blue borders, Lighter Blue fill on hover) */
         .seat-premium.available { border-color: #3b82f6; }
-        .seat-premium.available:hover, .seat-premium.selected { 
+        .seat-premium.available:not(.selected):hover { 
+            background-color: rgba(59, 130, 246, 0.2); 
+            border-color: #3b82f6; 
+        }
+        .seat-premium.selected { 
             background-color: #3b82f6; 
             border-color: #3b82f6; 
         }
 
-        /* Regular Tier (Yellow borders, Yellow fill on hover) */
+        /* Regular Tier (Yellow borders, Lighter Yellow fill on hover) */
         .seat-regular.available { border-color: #eab308; }
-        .seat-regular.available:hover, .seat-regular.selected { 
+        .seat-regular.available:not(.selected):hover { 
+            background-color: rgba(234, 179, 8, 0.2); 
+            border-color: #eab308; 
+        }
+        .seat-regular.selected { 
             background-color: #eab308; 
             border-color: #eab308; 
         }
@@ -259,11 +271,31 @@ $total_columns = 16;
 
         <div class="flex items-center justify-center gap-6 mt-4">
             <div class="flex items-center gap-2">
-                <div class="w-5 h-5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-transparent"></div>
+                <div class="flex items-center gap-1">
+                    <div class="w-5 h-5 flex items-center justify-center rounded border border-[#a855f7] bg-white dark:bg-transparent">
+                        <i data-lucide="crown" class="w-3 h-3 seat-icon"></i>
+                    </div>
+                    <div class="w-5 h-5 flex items-center justify-center rounded border border-[#3b82f6] bg-white dark:bg-transparent">
+                        <i data-lucide="star" class="w-3 h-3 seat-icon"></i>
+                    </div>
+                    <div class="w-5 h-5 flex items-center justify-center rounded border border-[#eab308] bg-white dark:bg-transparent">
+                        <i data-lucide="circle" class="w-3 h-3 seat-icon"></i>
+                    </div>
+                </div>
                 <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">Available</span>
             </div>
             <div class="flex items-center gap-2">
-                <div class="w-5 h-5 rounded bg-brand border border-brand"></div>
+                <div class="flex items-center gap-1">
+                    <div class="w-5 h-5 flex items-center justify-center rounded bg-[#a855f7] border border-[#a855f7]">
+                        <i data-lucide="crown" class="w-3 h-3 text-black"></i>
+                    </div>
+                    <div class="w-5 h-5 flex items-center justify-center rounded bg-[#3b82f6] border border-[#3b82f6]">
+                        <i data-lucide="star" class="w-3 h-3 text-black"></i>
+                    </div>
+                    <div class="w-5 h-5 flex items-center justify-center rounded bg-[#eab308] border border-[#eab308]">
+                        <i data-lucide="circle" class="w-3 h-3 text-black"></i>
+                    </div>
+                </div>
                 <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">Selected</span>
             </div>
             <div class="flex items-center gap-2">
@@ -394,23 +426,32 @@ $total_columns = 16;
                 const startCol = parseInt(seatId.slice(1));
                 const seatsNeeded = MAX_SEATS - selectedSeats.length;
 
+                // Check if contiguous selection is possible
+                let canSelectAllContiguously = true;
                 for (let i = 0; i < seatsNeeded; i++) {
                     const currentCol = startCol + i;
                     const currentSeatId = row + currentCol;
                     const currentBtn = document.getElementById('seat-' + currentSeatId);
                     
-                    // Stop if seat doesn't exist (end of row) or is booked
-                    if (!currentBtn || currentBtn.disabled || currentBtn.classList.contains('booked')) {
+                    if (!currentBtn || currentBtn.disabled || currentBtn.classList.contains('booked') || selectedSeats.includes(currentSeatId)) {
+                        canSelectAllContiguously = false;
                         break;
                     }
+                }
+
+                // If contiguous is not possible, only select the clicked seat
+                const seatsToSelect = canSelectAllContiguously ? seatsNeeded : 1;
+
+                for (let i = 0; i < seatsToSelect; i++) {
+                    const currentCol = startCol + i;
+                    const currentSeatId = row + currentCol;
+                    const currentBtn = document.getElementById('seat-' + currentSeatId);
                     
                     if (!selectedSeats.includes(currentSeatId)) {
                         selectedSeats.push(currentSeatId);
-                        totalPrice += price; // Contiguous seats in a row share the same tier pricing
+                        totalPrice += price;
                         currentBtn.classList.add('selected');
                     }
-                    
-                    if (selectedSeats.length >= MAX_SEATS) break;
                 }
             }
 
@@ -466,3 +507,4 @@ $total_columns = 16;
     </script>
 </body>
 </html>
+
