@@ -10,156 +10,30 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// 2. Database Seeder (Runs ONLY if user has 0 bookings, to ensure the UI looks exactly like the screenshot immediately)
-$check_bookings = $conn->prepare("SELECT COUNT(*) as cnt FROM bookings WHERE user_id = ?");
-$check_bookings->bind_param("i", $user_id);
-$check_bookings->execute();
-$booking_cnt = $check_bookings->get_result()->fetch_assoc()['cnt'];
-$check_bookings->close();
-
-if ($booking_cnt == 0) {
-    // A. Seed Oppenheimer movie if not exists
-    $opp_id = null;
-    $check_opp = $conn->prepare("SELECT id FROM movies WHERE title = 'Oppenheimer' LIMIT 1");
-    $check_opp->execute();
-    $opp_res = $check_opp->get_result();
-    if ($opp_res->num_rows > 0) {
-        $opp_id = $opp_res->fetch_assoc()['id'];
-    } else {
-        $ins_opp = $conn->prepare("INSERT INTO movies (title, duration, genre, language, certification, synopsis, director, release_date, rating, status, formats, poster_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $title = "Oppenheimer";
-        $duration = "180 min";
-        $genre = "Biography, Drama, History";
-        $lang = "English";
-        $cert = "A";
-        $syn = "The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.";
-        $dir = "Christopher Nolan";
-        $rel = "2023-07-21";
-        $rat = "8.9";
-        $stat = "Now Showing";
-        $formats = "IMAX 70mm, IMAX 2D";
-        $poster = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1000&auto=format&fit=crop";
-        $ins_opp->bind_param("ssssssssssss", $title, $duration, $genre, $lang, $cert, $syn, $dir, $rel, $rat, $stat, $formats, $poster);
-        $ins_opp->execute();
-        $opp_id = $ins_opp->insert_id;
-        $ins_opp->close();
-    }
-    $check_opp->close();
-
-    // B. Seed Dune: Part Two movie if not exists
-    $dune_id = null;
-    $check_dune = $conn->prepare("SELECT id FROM movies WHERE title = 'Dune: Part Two' LIMIT 1");
-    $check_dune->execute();
-    $dune_res = $check_dune->get_result();
-    if ($dune_res->num_rows > 0) {
-        $dune_id = $dune_res->fetch_assoc()['id'];
-    } else {
-        $ins_dune = $conn->prepare("INSERT INTO movies (title, duration, genre, language, certification, synopsis, director, release_date, rating, status, formats, poster_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $title = "Dune: Part Two";
-        $duration = "166 min";
-        $genre = "Sci-Fi, Adventure";
-        $lang = "English";
-        $cert = "UA";
-        $syn = "Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.";
-        $dir = "Denis Villeneuve";
-        $rel = "2024-03-01";
-        $rat = "8.6";
-        $stat = "Now Showing";
-        $formats = "IMAX 3D, 2D";
-        $poster = "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=1000&auto=format&fit=crop";
-        $ins_dune->bind_param("ssssssssssss", $title, $duration, $genre, $lang, $cert, $syn, $dir, $rel, $rat, $stat, $formats, $poster);
-        $ins_dune->execute();
-        $dune_id = $ins_dune->insert_id;
-        $ins_dune->close();
-    }
-    $check_dune->close();
-
-    // C. Seed Oppenheimer showtime if not exists
-    $opp_st_id = null;
-    $check_opp_st = $conn->prepare("SELECT id FROM showtimes WHERE movie_id = ? AND theater_id = 'PVR Juhu' AND show_date = '2026-05-03' AND show_time = '14:00:00' LIMIT 1");
-    $check_opp_st->bind_param("i", $opp_id);
-    $check_opp_st->execute();
-    $opp_st_res = $check_opp_st->get_result();
-    if ($opp_st_res->num_rows > 0) {
-        $opp_st_id = $opp_st_res->fetch_assoc()['id'];
-    } else {
-        $ins_st = $conn->prepare("INSERT INTO showtimes (movie_id, city, theater_id, screen_id, format, language, show_date, show_time, total_seats, price_regular) VALUES (?, 'Mumbai', 'PVR Juhu', 'Audi 1', 'IMAX 70mm', 'English', '2026-05-03', '14:00:00', 150, 33.00)");
-        $ins_st->bind_param("i", $opp_id);
-        $ins_st->execute();
-        $opp_st_id = $ins_st->insert_id;
-        $ins_st->close();
-    }
-    $check_opp_st->close();
-
-    // D. Seed Dune showtime if not exists
-    $dune_st_id = null;
-    $check_dune_st = $conn->prepare("SELECT id FROM showtimes WHERE movie_id = ? AND theater_id = 'INOX Megaplex' AND show_date = '2026-05-03' AND show_time = '15:30:00' LIMIT 1");
-    $check_dune_st->bind_param("i", $dune_id);
-    $check_dune_st->execute();
-    $dune_st_res = $check_dune_st->get_result();
-    if ($dune_st_res->num_rows > 0) {
-        $dune_st_id = $dune_st_res->fetch_assoc()['id'];
-    } else {
-        $ins_st = $conn->prepare("INSERT INTO showtimes (movie_id, city, theater_id, screen_id, format, language, show_date, show_time, total_seats, price_regular) VALUES (?, 'Mumbai', 'INOX Megaplex', 'Screen 2', 'IMAX 3D', 'English', '2026-05-03', '15:30:00', 180, 33.33)");
-        $ins_st->bind_param("i", $dune_id);
-        $ins_st->execute();
-        $dune_st_id = $ins_st->insert_id;
-        $ins_st->close();
-    }
-    $check_dune_st->close();
-
-    // E. Insert Bookings
-    // Oppenheimer Booking ($88.00 total)
-    $ins_bk1 = $conn->prepare("INSERT INTO bookings (user_id, showtime_id, seat_numbers, total_amount, booking_date) VALUES (?, ?, 'H10, H11', 88.00, '2026-05-03 12:00:00')");
-    $ins_bk1->bind_param("ii", $user_id, $opp_st_id);
-    $ins_bk1->execute();
-    $bk1_id = $ins_bk1->insert_id;
-    $ins_bk1->close();
-
-    // Dune Booking ($140.00 total)
-    $ins_bk2 = $conn->prepare("INSERT INTO bookings (user_id, showtime_id, seat_numbers, total_amount, booking_date) VALUES (?, ?, 'G5, G6, G7', 140.00, '2026-05-03 12:30:00')");
-    $ins_bk2->bind_param("ii", $user_id, $dune_st_id);
-    $ins_bk2->execute();
-    $bk2_id = $ins_bk2->insert_id;
-    $ins_bk2->close();
-
-    // F. Insert Food Items for bookings
-    $ins_food = $conn->prepare("INSERT INTO booking_food (booking_id, food_id, food_name, quantity, price) VALUES (?, ?, ?, ?, ?)");
-    
-    // Oppenheimer food: Popcorn x1 ($12), Pepsi x2 ($5 each, total $10). Ticket base was $66 (2 * $33)
-    $f_id1 = 1; $f_name1 = "Popcorn (Large)"; $f_qty1 = 1; $f_pr1 = 12.00;
-    $ins_food->bind_param("iisid", $bk1_id, $f_id1, $f_name1, $f_qty1, $f_pr1);
-    $ins_food->execute();
-
-    $f_id2 = 2; $f_name2 = "Pepsi (Medium)"; $f_qty2 = 2; $f_pr2 = 5.00;
-    $ins_food->bind_param("iisid", $bk1_id, $f_id2, $f_name2, $f_qty2, $f_pr2);
-    $ins_food->execute();
-
-    // Dune food: Nachos x2 ($8 each, total $16), Coke x3 ($8 each, total $24). Ticket base was $100 (3 * $33.33)
-    $f_id3 = 3; $f_name3 = "Nachos"; $f_qty3 = 2; $f_pr3 = 8.00;
-    $ins_food->bind_param("iisid", $bk2_id, $f_id3, $f_name3, $f_qty3, $f_pr3);
-    $ins_food->execute();
-
-    $f_id4 = 4; $f_name4 = "Coke (Large)"; $f_qty4 = 3; $f_pr4 = 8.00;
-    $ins_food->bind_param("iisid", $bk2_id, $f_id4, $f_name4, $f_qty4, $f_pr4);
-    $ins_food->execute();
-
-    $ins_food->close();
-}
-
-// 3. Fetch User Profile Data
+// 2. Fetch User Profile Data Dynamically
 $user_stmt = $conn->prepare("SELECT fullname, email, phone FROM users WHERE id = ?");
 $user_stmt->bind_param("i", $user_id);
 $user_stmt->execute();
 $user_info = $user_stmt->get_result()->fetch_assoc();
 $user_stmt->close();
 
-// Fallback for name/phone if they are empty
-$user_fullname = !empty($user_info['fullname']) ? $user_info['fullname'] : 'User';
-$user_phone = !empty($user_info['phone']) ? $user_info['phone'] : '+1 234 567 8900';
+if (!$user_info) {
+    header("Location: logout.php");
+    exit;
+}
 
-// 4. Fetch Booking Stats (Total Count & Total Spent)
-$stats_stmt = $conn->prepare("SELECT COUNT(*) as total_count, SUM(total_amount) as total_spent FROM bookings WHERE user_id = ?");
+$user_fullname = !empty($user_info['fullname']) ? $user_info['fullname'] : 'User';
+$user_email = $user_info['email'] ?? '';
+$user_phone = !empty($user_info['phone']) ? $user_info['phone'] : 'N/A';
+
+// 3. Fetch Booking Stats Dynamically (Only counting active/confirmed bookings for total spent)
+$stats_stmt = $conn->prepare("
+    SELECT 
+        COUNT(*) as total_count, 
+        SUM(CASE WHEN status != 'Cancelled' THEN total_amount ELSE 0 END) as total_spent 
+    FROM bookings 
+    WHERE user_id = ?
+");
 $stats_stmt->bind_param("i", $user_id);
 $stats_stmt->execute();
 $stats = $stats_stmt->get_result()->fetch_assoc();
@@ -168,7 +42,7 @@ $stats_stmt->close();
 $total_bookings = $stats['total_count'] ?? 0;
 $total_spent = $stats['total_spent'] ?? 0;
 
-// 5. Fetch Detailed Bookings History with JOINS
+// 4. Fetch Detailed Bookings History with JOINS
 $bookings_sql = "
     SELECT 
         b.id AS booking_id,
@@ -196,10 +70,12 @@ $bookings_stmt = $conn->prepare($bookings_sql);
 $bookings_stmt->bind_param("i", $user_id);
 $bookings_stmt->execute();
 $bookings_result = $bookings_stmt->get_result();
+
 $bookings = [];
 $upcoming_bookings = [];
 $past_bookings = [];
 $cancelled_bookings = [];
+
 while ($row = $bookings_result->fetch_assoc()) {
     $bookings[] = $row;
     if ($row['booking_status'] === 'Cancelled') {
@@ -215,7 +91,7 @@ while ($row = $bookings_result->fetch_assoc()) {
 }
 $bookings_stmt->close();
 
-// 6. Fetch Food Items for all bookings of this user to inject in JavaScript
+// 5. Fetch Food Items for all bookings of this user dynamically
 $food_items_by_booking = [];
 if (!empty($bookings)) {
     $booking_ids = array_column($bookings, 'booking_id');
@@ -284,7 +160,6 @@ if (!empty($bookings)) {
             <!-- Left Sidebar (Profile Card) -->
             <aside class="w-full lg:w-[360px] shrink-0">
                 <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-8 flex flex-col items-center shadow-sm">
-                    <!-- Profile Icon Avatar Circle -->
                     <div class="w-24 h-24 bg-[#FFF9E5] dark:bg-[#2A2408] rounded-full flex items-center justify-center mb-5 border border-[#FFEBA5] dark:border-[#52440D]">
                         <i data-lucide="user" class="w-11 h-11 text-[#F5C518]"></i>
                     </div>
@@ -292,13 +167,12 @@ if (!empty($bookings)) {
                     <h2 class="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white"><?php echo htmlspecialchars($user_fullname); ?></h2>
                     <p class="text-sm font-semibold text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-wider">CineBook Member</p>
 
-                    <!-- Contact Details styled as input boxes -->
                     <div class="w-full mt-8 space-y-4">
                         <div class="bg-gray-50 dark:bg-[#1A1A1A] p-4 rounded-xl flex items-center gap-4 border border-gray-100 dark:border-gray-800/60">
                             <i data-lucide="mail" class="w-5 h-5 text-gray-400 dark:text-gray-500 shrink-0"></i>
                             <div class="truncate">
                                 <p class="text-[11px] font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider">Email</p>
-                                <p class="text-sm font-semibold text-gray-950 dark:text-gray-200 truncate"><?php echo htmlspecialchars($user_info['email']); ?></p>
+                                <p class="text-sm font-semibold text-gray-950 dark:text-gray-200 truncate"><?php echo htmlspecialchars($user_email); ?></p>
                             </div>
                         </div>
                         <div class="bg-gray-50 dark:bg-[#1A1A1A] p-4 rounded-xl flex items-center gap-4 border border-gray-100 dark:border-gray-800/60">
@@ -310,7 +184,6 @@ if (!empty($bookings)) {
                         </div>
                     </div>
 
-                    <!-- Statistics Panel Split Row -->
                     <div class="w-full mt-8 pt-8 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
                         <div class="text-center flex-1">
                             <p class="text-3xl font-extrabold text-[#F5C518] tracking-tight"><?php echo $total_bookings; ?></p>
@@ -324,7 +197,6 @@ if (!empty($bookings)) {
                     </div>
                 </div>
                 
-                <!-- Cancellation Policy Sidebar Card -->
                 <div class="mt-6 bg-white dark:bg-[#121212] rounded-3xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-4">
                     <div class="flex items-center gap-2 mb-2">
                         <i data-lucide="info" class="w-5 h-5 text-[#F5C518]"></i>
@@ -362,7 +234,6 @@ if (!empty($bookings)) {
                 
                 <div class="space-y-6">
                     <?php if (empty($upcoming_bookings) && empty($past_bookings) && empty($cancelled_bookings)): ?>
-                        <!-- Empty State -->
                         <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-16 text-center shadow-sm">
                             <div class="w-16 h-16 bg-gray-100 dark:bg-[#1E1E1E] rounded-full flex items-center justify-center mx-auto mb-4">
                                 <i data-lucide="ticket" class="w-8 h-8 text-gray-400 dark:text-gray-500"></i>
@@ -380,7 +251,6 @@ if (!empty($bookings)) {
                                 <h2 class="text-xl font-bold text-gray-900 dark:text-white">Current & Upcoming Bookings</h2>
                             </div>
                             <?php foreach($upcoming_bookings as $booking): ?>
-                                <!-- Active Booking Card -->
                                 <?php 
                                     $show_datetime = $booking['show_date'] . ' ' . $booking['show_time'];
                                     $diff_seconds = strtotime($show_datetime) - time();
@@ -395,15 +265,14 @@ if (!empty($bookings)) {
                                         $refund_msg = "50% refund if cancelled now";
                                         $refund_class = "text-orange-600 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-900/30";
                                     }
+
+                                    $poster_src = htmlspecialchars($booking['poster_image']);
+                                    if (!empty($poster_src) && strpos($poster_src, 'http') !== 0 && strpos($poster_src, '/') !== 0) {
+                                        $poster_src = 'admin/' . $poster_src;
+                                    }
                                 ?>
                                 <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col md:flex-row gap-6 shadow-sm hover:shadow-md transition-shadow duration-300 relative">
                                     <div class="w-full md:w-[150px] h-[225px] shrink-0 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-inner">
-                                        <?php 
-                                        $poster_src = htmlspecialchars($booking['poster_image']);
-                                        if (strpos($poster_src, 'http') !== 0) {
-                                            $poster_src = 'admin/' . $poster_src;
-                                        }
-                                        ?>
                                         <img src="<?php echo $poster_src; ?>" alt="Poster" class="w-full h-full object-cover">
                                     </div>
                                     <div class="flex-1 flex flex-col justify-between">
@@ -425,7 +294,7 @@ if (!empty($bookings)) {
                                         <div class="grid grid-cols-2 gap-y-3.5 gap-x-6 text-sm text-gray-600 dark:text-gray-300 mb-4 pt-2">
                                             <div class="flex items-center gap-2.5">
                                                 <i data-lucide="calendar" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
-                                                <span class="font-medium"><?php echo date('d-m-y', strtotime($booking['show_date'])); ?></span>
+                                                <span class="font-medium"><?php echo date('d-m-Y', strtotime($booking['show_date'])); ?></span>
                                             </div>
                                             <div class="flex items-center gap-2.5">
                                                 <i data-lucide="clock" class="w-4 h-4 text-gray-400 dark:text-gray-500"></i>
@@ -476,15 +345,14 @@ if (!empty($bookings)) {
                                 <h2 class="text-xl font-bold text-gray-900 dark:text-white">Past Bookings</h2>
                             </div>
                             <?php foreach($past_bookings as $booking): ?>
-                                <!-- Past Booking Card -->
+                                <?php 
+                                    $poster_src = htmlspecialchars($booking['poster_image']);
+                                    if (!empty($poster_src) && strpos($poster_src, 'http') !== 0 && strpos($poster_src, '/') !== 0) {
+                                        $poster_src = 'admin/' . $poster_src;
+                                    }
+                                ?>
                                 <div class="bg-gray-50 dark:bg-[#121212]/50 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col md:flex-row gap-6 shadow-sm relative opacity-80">
                                     <div class="w-full md:w-[150px] h-[225px] shrink-0 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-inner">
-                                        <?php 
-                                        $poster_src = htmlspecialchars($booking['poster_image']);
-                                        if (strpos($poster_src, 'http') !== 0) {
-                                            $poster_src = 'admin/' . $poster_src;
-                                        }
-                                        ?>
                                         <img src="<?php echo $poster_src; ?>" alt="Poster" class="w-full h-full object-cover grayscale opacity-80">
                                     </div>
                                     <div class="flex-1 flex flex-col justify-between">
@@ -506,7 +374,7 @@ if (!empty($bookings)) {
                                         <div class="grid grid-cols-2 gap-y-3.5 gap-x-6 text-sm text-gray-500 dark:text-gray-400 mb-4 pt-2">
                                             <div class="flex items-center gap-2.5">
                                                 <i data-lucide="calendar" class="w-4 h-4 opacity-70"></i>
-                                                <span class="font-medium"><?php echo date('d-m-y', strtotime($booking['show_date'])); ?></span>
+                                                <span class="font-medium"><?php echo date('d-m-Y', strtotime($booking['show_date'])); ?></span>
                                             </div>
                                             <div class="flex items-center gap-2.5">
                                                 <i data-lucide="clock" class="w-4 h-4 opacity-70"></i>
@@ -547,21 +415,17 @@ if (!empty($bookings)) {
                         </div>
                         
                         <?php foreach($cancelled_bookings as $booking): ?>
-                            <!-- Cancelled Booking Card -->
+                            <?php 
+                                $poster_src = htmlspecialchars($booking['poster_image']);
+                                if (!empty($poster_src) && strpos($poster_src, 'http') !== 0 && strpos($poster_src, '/') !== 0) {
+                                    $poster_src = 'admin/' . $poster_src;
+                                }
+                            ?>
                             <div class="bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 flex flex-col md:flex-row gap-5 relative overflow-hidden">
-                                
-                                <!-- Cancelled Overlay for Poster -->
                                 <div class="w-full md:w-[120px] h-[180px] shrink-0 rounded-xl overflow-hidden relative">
-                                    <?php 
-                                    $poster_src = htmlspecialchars($booking['poster_image']);
-                                    if (strpos($poster_src, 'http') !== 0) {
-                                        $poster_src = 'admin/' . $poster_src;
-                                    }
-                                    ?>
                                     <img src="<?php echo $poster_src; ?>" alt="Poster" class="w-full h-full object-cover grayscale opacity-70">
                                 </div>
                                 
-                                <!-- Booking Details Container -->
                                 <div class="flex-1 flex flex-col justify-between">
                                     <div class="flex justify-between items-start">
                                         <div>
@@ -575,7 +439,7 @@ if (!empty($bookings)) {
                                     </div>
                                     
                                     <div class="flex gap-8 text-xs text-gray-500 dark:text-gray-400 my-4">
-                                        <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> <?php echo date('d-m-y', strtotime($booking['show_date'])); ?></div>
+                                        <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> <?php echo date('d-m-Y', strtotime($booking['show_date'])); ?></div>
                                         <div class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i> <?php echo htmlspecialchars($booking['cinema_name']); ?></div>
                                     </div>
                                     
@@ -605,16 +469,12 @@ if (!empty($bookings)) {
     <!-- Ticket Modal Popup -->
     <div id="ticket-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4 transition-all duration-300">
         <div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-lg shadow-2xl relative flex flex-col overflow-hidden max-h-[90vh]">
-            <!-- Close button in modal corner -->
             <button onclick="closeTicketModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors z-50">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
             
-            <!-- Scrollable Ticket Stub -->
             <div class="overflow-y-auto flex-1 hide-scrollbar">
-                <!-- Ticket Header stub with branding -->
                 <div class="bg-[#F5C518] p-8 text-black relative">
-                    <!-- Realistic ticket half circle cutouts -->
                     <div class="absolute left-0 bottom-0 w-4 h-8 bg-black/80 rounded-r-full translate-y-4"></div>
                     <div class="absolute right-0 bottom-0 w-4 h-8 bg-black/80 rounded-l-full translate-y-4"></div>
                     
@@ -631,22 +491,20 @@ if (!empty($bookings)) {
                     <div class="flex gap-8 mt-8">
                         <div>
                             <p class="text-[10px] font-extrabold uppercase tracking-wider opacity-75 mb-0.5">Date</p>
-                            <p id="modal-show-date" class="font-black text-sm">2026-05-03</p>
+                            <p id="modal-show-date" class="font-black text-sm">--</p>
                         </div>
                         <div>
                             <p class="text-[10px] font-extrabold uppercase tracking-wider opacity-75 mb-0.5">Time</p>
-                            <p id="modal-show-time" class="font-black text-sm">14:00</p>
+                            <p id="modal-show-time" class="font-black text-sm">--</p>
                         </div>
                         <div>
                             <p class="text-[10px] font-extrabold uppercase tracking-wider opacity-75 mb-0.5">Format</p>
-                            <p id="modal-show-format" class="font-black text-sm">IMAX 70mm</p>
+                            <p id="modal-show-format" class="font-black text-sm">--</p>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Ticket Body -->
                 <div class="p-8 space-y-6 relative">
-                    <!-- Dotted Tear line decoration at stub boundary -->
                     <div class="absolute left-0 top-0 w-full flex justify-between px-6 -translate-y-0.5">
                         <?php for($i=0; $i<24; $i++): ?>
                             <span class="w-1.5 h-1 bg-gray-200 dark:bg-gray-800 rounded-full"></span>
@@ -656,19 +514,19 @@ if (!empty($bookings)) {
                     <div class="grid grid-cols-2 gap-y-6 gap-x-4">
                         <div>
                             <p class="text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider mb-1">Booking ID</p>
-                            <p id="modal-booking-ref" class="font-bold text-gray-900 dark:text-white">BK001</p>
+                            <p id="modal-booking-ref" class="font-bold text-gray-900 dark:text-white">--</p>
                         </div>
                         <div>
                             <p class="text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider mb-1">Seats</p>
-                            <p id="modal-seats" class="font-bold text-gray-900 dark:text-white">H10, H11</p>
+                            <p id="modal-seats" class="font-bold text-gray-900 dark:text-white">--</p>
                         </div>
                         <div>
                             <p class="text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider mb-1">Number of Tickets</p>
-                            <p id="modal-ticket-count" class="font-bold text-gray-900 dark:text-white">2</p>
+                            <p id="modal-ticket-count" class="font-bold text-gray-900 dark:text-white">0</p>
                         </div>
                         <div>
                             <p class="text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider mb-1">Total Paid</p>
-                            <p id="modal-total-paid" class="font-black text-[#F5C518] text-lg">₹88.00</p>
+                            <p id="modal-total-paid" class="font-black text-[#F5C518] text-lg">₹0</p>
                         </div>
                     </div>
                     
@@ -676,16 +534,13 @@ if (!empty($bookings)) {
                     
                     <div>
                         <p class="text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider mb-1">Cinema Address</p>
-                        <p id="modal-cinema-address" class="font-medium text-sm text-gray-950 dark:text-gray-200">Mumbai</p>
+                        <p id="modal-cinema-address" class="font-medium text-sm text-gray-950 dark:text-gray-200">--</p>
                     </div>
                     
-                    <!-- Food and Beverages Section -->
                     <div id="modal-food-section" class="hidden">
                         <hr class="border-gray-100 dark:border-gray-800/60 mb-6">
                         <p class="text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider mb-2">Food & Beverages</p>
-                        <div id="modal-food-list" class="space-y-2">
-                            <!-- Injected Food rows -->
-                        </div>
+                        <div id="modal-food-list" class="space-y-2"></div>
                     </div>
                     
                     <div class="bg-gray-50 dark:bg-[#1c1c1c] border border-gray-100 dark:border-gray-800/60 rounded-2xl p-5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -694,7 +549,6 @@ if (!empty($bookings)) {
                 </div>
             </div>
             
-            <!-- Modal Footer Controls -->
             <div class="border-t border-gray-100 dark:border-gray-800 p-6 bg-gray-50 dark:bg-[#181818] flex flex-wrap gap-3 justify-center">
                 <button onclick="window.print()" class="flex items-center gap-2 px-5 py-2.5 border border-gray-300 dark:border-gray-700 rounded-xl font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-150 dark:hover:bg-[#222] transition-colors text-xs focus:outline-none">
                     <i data-lucide="printer" class="w-4 h-4"></i> Print Ticket
@@ -750,12 +604,10 @@ if (!empty($bookings)) {
     </div>
 
     <script>
-        // Initialize Lucide icons on page load
         if (typeof lucide !== 'undefined') { 
             lucide.createIcons(); 
         }
 
-        // Inject PHP data as JSON objects for instant interactive loading
         const bookingsData = <?php echo json_encode($bookings); ?>;
         const foodData = <?php echo json_encode($food_items_by_booking); ?>;
 
@@ -763,12 +615,10 @@ if (!empty($bookings)) {
             const booking = bookingsData.find(b => b.booking_id == bookingId);
             if (!booking) return;
 
-            // Populate text content dynamically
             document.getElementById('modal-movie-title').textContent = booking.movie_title;
             document.getElementById('modal-cinema-name').textContent = booking.cinema_name;
             document.getElementById('modal-show-date').textContent = booking.show_date;
             
-            // Strip seconds from time string if present (e.g., 14:00:00 -> 14:00)
             let showTime = booking.show_time;
             if (showTime && showTime.includes(':')) {
                 const parts = showTime.split(':');
@@ -777,22 +627,15 @@ if (!empty($bookings)) {
             document.getElementById('modal-show-time').textContent = showTime;
             document.getElementById('modal-show-format').textContent = booking.show_format || 'Standard';
             
-            // Format ID (e.g., BK001)
             const paddedId = 'BK' + String(booking.booking_id).padStart(3, '0');
             document.getElementById('modal-booking-ref').textContent = paddedId;
             document.getElementById('modal-seats').textContent = booking.seat_numbers;
             
-            // Calculate total ticket count
             const seatCount = booking.seat_numbers ? booking.seat_numbers.split(',').length : 0;
             document.getElementById('modal-ticket-count').textContent = seatCount;
-            
-            // Format Total Amount
             document.getElementById('modal-total-paid').textContent = '₹' + parseFloat(booking.total_amount).toFixed(0);
-            
-            // Format location city
-            document.getElementById('modal-cinema-address').textContent = booking.cinema_city || 'Mumbai';
+            document.getElementById('modal-cinema-address').textContent = booking.cinema_city || 'N/A';
 
-            // Populate Food & Beverages items if any were bought
             const foodList = foodData[bookingId] || [];
             const foodSection = document.getElementById('modal-food-section');
             const foodListContainer = document.getElementById('modal-food-list');
@@ -803,7 +646,6 @@ if (!empty($bookings)) {
                 foodList.forEach(item => {
                     const row = document.createElement('div');
                     row.className = 'flex justify-between text-sm';
-                    
                     const itemTotal = parseFloat(item.price) * parseInt(item.quantity);
                     row.innerHTML = `
                         <span class="font-medium text-gray-800 dark:text-gray-200">${item.food_name} <span class="text-gray-500 dark:text-gray-400 ml-1">x${item.quantity}</span></span>
@@ -815,12 +657,10 @@ if (!empty($bookings)) {
                 foodSection.classList.add('hidden');
             }
 
-            // Reveal Modal
             const modal = document.getElementById('ticket-modal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             
-            // Reinits lucide icons inside modal (especially QR code icon)
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
@@ -832,21 +672,14 @@ if (!empty($bookings)) {
             modal.classList.remove('flex');
         }
 
-        // Close on clicking outside modal card or pressing escape key
         window.addEventListener('click', (e) => {
             const modal = document.getElementById('ticket-modal');
             const cancelConfirm = document.getElementById('cancel-confirm-modal');
             const cancelSuccess = document.getElementById('cancel-success-modal');
             
-            if (e.target === modal) {
-                closeTicketModal();
-            }
-            if (e.target === cancelConfirm) {
-                closeCancelConfirmModal();
-            }
-            if (e.target === cancelSuccess) {
-                closeCancelSuccessModal();
-            }
+            if (e.target === modal) closeTicketModal();
+            if (e.target === cancelConfirm) closeCancelConfirmModal();
+            if (e.target === cancelSuccess) closeCancelSuccessModal();
         });
         
         document.addEventListener('keydown', (e) => {
@@ -964,4 +797,3 @@ if (!empty($bookings)) {
     </script>
 </body>
 </html>
-
