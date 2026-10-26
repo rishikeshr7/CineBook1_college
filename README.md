@@ -154,17 +154,6 @@ Once the files are in `htdocs` and the database is configured:
 
 ---
 
-## 📦 Missing / Not Detected Configurations
-
-Based on the repository analysis, the following standard setups are **Not detected** (as this is a native PHP project):
-- **Available Scripts (npm/yarn)**: *Not detected*
-- **Production Build Steps**: *Not detected* (Deploy files directly to a standard PHP/cPanel web host).
-- **API Integrations**: *Not detected* (No external REST/GraphQL APIs used).
-- **Cloud Storage**: *Not detected* (Images are stored locally in `/admin/uploads/`).
-- **Testing Frameworks**: *Not detected*
-- **Linting / Formatting Tools**: *Not detected*
-- **Docker / CI/CD**: *Not detected*
-
 ## 🐛 Troubleshooting
 
 - **Database Connection Failed**: Ensure MySQL is running in XAMPP and the database name in `dbconnect.php` exactly matches the one you created in phpMyAdmin.
