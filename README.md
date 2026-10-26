@@ -57,7 +57,6 @@ CineBook utilizes a classic **Three-Tier Client-Server Architecture** running on
 | **Database** | MySQL |
 | **Server** | Apache (XAMPP / WAMP) |
 | **Auth Provider** | Native PHP Sessions & `password_hash()` |
-| **Package Manager**| *Not detected* (No dependencies) |
 | **State Management**| PHP `$_SESSION` |
 | **Routing** | Native File-based Routing |
 
